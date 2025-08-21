@@ -1,20 +1,17 @@
-﻿namespace ApartmentManagement.Domain.Leasing.Apartments;
+﻿using ApartmentManagement.Domain.Leasing.Owners;
+using ApartmentManagement.Domain.Leasing.Tenants;
+
+namespace ApartmentManagement.Domain.Leasing.Apartments;
 
 public sealed record ApartmentId(Guid Value);
 public sealed record Address(string Line1, string City, string State, string PostalCode);
 public interface IAggregateRoot { }
 
-[Flags]
-public enum Amenities
+public enum ApartmentStatus
 {
-    None = 0,
-    Parking = 1 << 0,
-    Laundry = 1 << 1,
-    AirConditioning = 1 << 2,
-    Dishwasher = 1 << 3,
-    Balcony = 1 << 4,
-    Gym = 1 << 5,
-    Pool = 1 << 6
+    Vacant = 0,
+    Occupied = 1,
+    Under_Maintenance = 2
 }
 
 public sealed class Apartment : IAggregateRoot
@@ -22,17 +19,19 @@ public sealed class Apartment : IAggregateRoot
     private Apartment() { }
 
     public Apartment(
-        ApartmentId id,
-        string name,
-        int unitNumber,
-        Address address,
-        int bedrooms,
-        int bathrooms,
-        decimal monthlyRent,
-        int? squareFeet = null,
-        DateOnly? availableFrom = null,
-        Amenities amenities = Amenities.None,
-        string? description = null)
+     ApartmentId id,
+     string name,
+     int unitNumber,
+     Address address,
+     int bedrooms,
+     int bathrooms,
+     int capacity,
+     decimal monthlyRent,
+     int? squareFeet = null,
+     DateOnly? availableFrom = null,
+     string? description = null,
+     ApartmentStatus status = ApartmentStatus.Vacant,
+     OwnerId? ownerId = null)
     {
         Id = id;
         Rename(name);
@@ -40,15 +39,35 @@ public sealed class Apartment : IAggregateRoot
         ChangeAddress(address);
         SetBedrooms(bedrooms);
         SetBathrooms(bathrooms);
+        SetCapacity(capacity);
         ChangeMonthlyRent(monthlyRent);
         SquareFeet = squareFeet;
         AvailableFrom = availableFrom;
-        Amenities = amenities;
         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
-
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = CreatedAt;
         IsAvailable = availableFrom is null || availableFrom <= DateOnly.FromDateTime(DateTime.UtcNow);
+        Status = status;
+
+        if (ownerId is not null) AssignOwner(ownerId);
+    }
+
+    // --- Ownership (add these) ---
+    public OwnerId? OwnerId { get; private set; } = default!;
+    public DateTime? OwnershipAssignedAt { get; private set; }
+    public void AssignOwner(OwnerId ownerId)
+    {
+        OwnerId = ownerId ?? throw new ArgumentNullException(nameof(ownerId));
+        OwnershipAssignedAt = DateTime.UtcNow;
+        Touch();
+    }
+    public void TransferOwnership(OwnerId newOwnerId)
+    {
+        ArgumentNullException.ThrowIfNull(newOwnerId);
+        if (OwnerId == newOwnerId) return;
+        OwnerId = newOwnerId;
+        OwnershipAssignedAt = DateTime.UtcNow;
+        Touch();
     }
 
     // Identity
@@ -61,7 +80,10 @@ public sealed class Apartment : IAggregateRoot
     public Address Address { get; private set; } = default!;
     public int Bedrooms { get; private set; }
     public int Bathrooms { get; private set; }
+    public int Capacity { get; private set; }
+    public int CurrentCapacity { get; private set; }
     public int? SquareFeet { get; private set; }
+    public ApartmentStatus Status { get; private set; } = ApartmentStatus.Vacant;
 
 
     // Pricing & availability (simple decimal for rent; introduce Money VO later if needed)
@@ -70,7 +92,6 @@ public sealed class Apartment : IAggregateRoot
     public bool IsAvailable { get; private set; }
 
     // Extras
-    public Amenities Amenities { get; private set; }
     public string? Description { get; private set; }
 
     // Soft-delete & audit
@@ -87,7 +108,7 @@ public sealed class Apartment : IAggregateRoot
 
     public void SetUnitNumber(int unitNumber)
     {
-        if (unitNumber <= 0) throw new ArgumentOutOfRangeException(nameof(unitNumber));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(unitNumber);
         UnitNumber = unitNumber; Touch();
     }
 
@@ -98,19 +119,34 @@ public sealed class Apartment : IAggregateRoot
 
     public void SetBedrooms(int bedrooms)
     {
-        if (bedrooms < 0) throw new ArgumentOutOfRangeException(nameof(bedrooms));
+        ArgumentOutOfRangeException.ThrowIfNegative(bedrooms);
         Bedrooms = bedrooms; Touch();
     }
 
     public void SetBathrooms(int bathrooms)
     {
-        if (bathrooms < 0) throw new ArgumentOutOfRangeException(nameof(bathrooms));
+        ArgumentOutOfRangeException.ThrowIfNegative(bathrooms);
         Bathrooms = bathrooms; Touch();
+    }
+
+    public void SetCapacity(int capacity)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(capacity);
+        Capacity = capacity; Touch();
+    }
+
+    public void SetSquareFeet(int? squareFeet)
+    {
+        if (squareFeet is < 0)
+            throw new ArgumentOutOfRangeException(nameof(squareFeet));
+
+        SquareFeet = squareFeet;
+        Touch();
     }
 
     public void ChangeMonthlyRent(decimal monthlyRent)
     {
-        if (monthlyRent < 0) throw new ArgumentOutOfRangeException(nameof(monthlyRent));
+        ArgumentOutOfRangeException.ThrowIfNegative(monthlyRent);
         MonthlyRent = monthlyRent; Touch();
     }
 
@@ -121,7 +157,11 @@ public sealed class Apartment : IAggregateRoot
         Touch();
     }
 
-    public void SetAmenities(Amenities amenities) { Amenities = amenities; Touch(); }
+    public void SetIsAvailable(bool isAvailable)
+    {
+        IsAvailable = isAvailable;
+        Touch();
+    }
 
     public void UpdateDescription(string? description)
     {
@@ -133,4 +173,34 @@ public sealed class Apartment : IAggregateRoot
     public void SoftDelete() { IsDeleted = true; Touch(); }
 
     private void Touch() => UpdatedAt = DateTime.UtcNow;
+
+    public void ChangeStatus(ApartmentStatus status)
+    {
+        Status = status;
+        Touch();
+    }
+
+    public void IncrementCurrentCapacity()
+    {
+        if (CurrentCapacity < Capacity)
+        {
+            CurrentCapacity++;
+        }
+        else
+        {
+            throw new InvalidOperationException("Cannot increment, apartment is full.");
+        }
+    }
+    public void DecrementCurrentCapacity()
+    {
+        if (CurrentCapacity > 0)
+        {
+            CurrentCapacity--;
+        }
+        else
+        {
+            throw new InvalidOperationException("Cannot decrement, apartment is empty.");
+        }
+    }
+
 }

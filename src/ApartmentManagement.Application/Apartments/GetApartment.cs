@@ -1,56 +1,68 @@
-﻿using ApartmentManagement.Domain.Leasing.Apartments;
+﻿using ApartmentManagement.Application.Common;
+using ApartmentManagement.Domain.Leasing.Apartments;
+using ApartmentManagement.Domain.Leasing.Owners;
+using AutoMapper;
 using MediatR;
 
-public record ApartmentDto(
-    Guid Id,
-    string Name,
-    int UnitNumber,
-    AddressDto Address,
-    int Bedrooms,
-    int Bathrooms,
-    int? SquareFeet,
-    decimal MonthlyRent,
-    DateOnly? AvailableFrom,
-    bool IsAvailable,
-    string? Description,
-    string[] Amenities,
-    DateTime CreatedAt,
-    DateTime UpdatedAt
-);
+namespace ApartmentManagement.Application.Apartments;
+
 public record GetApartmentQuery(Guid Id) : IRequest<ApartmentDto?>;
-public sealed class GetApartmentHandler : IRequestHandler<GetApartmentQuery, ApartmentDto?>
+public record GetAllApartmentsQuery : IRequest<IEnumerable<ApartmentDto>>;
+
+public class GetApartmentHandler(IApartmentRepository repo, IOwnerRepository ownerRepo, IMapper mapper) : IRequestHandler<GetApartmentQuery, ApartmentDto?>
 {
-    private readonly IApartmentRepository _repo;
-    public GetApartmentHandler(IApartmentRepository repo) => _repo = repo;
+    private readonly IApartmentRepository _repo = repo;
+    private readonly IOwnerRepository _ownerRepo = ownerRepo;
+    private readonly IMapper _mapper = mapper;
 
     public async Task<ApartmentDto?> Handle(GetApartmentQuery q, CancellationToken ct)
     {
-        var a = await _repo.GetByIdAsync(new ApartmentId(q.Id), ct);
-        if (a is null) return null;
+        var apartment = await _repo.GetByIdAsync(new ApartmentId(q.Id), ct);
+        if (apartment is null) return null;
 
-        var dto = new ApartmentDto(
-            Id: a.Id.Value,
-            Name: a.Name,
-            UnitNumber: a.UnitNumber,
-            Address: new AddressDto(a.Address.Line1, a.Address.City, a.Address.State, a.Address.PostalCode),
-            Bedrooms: a.Bedrooms,
-            Bathrooms: a.Bathrooms,
-            SquareFeet: a.SquareFeet,
-            MonthlyRent: a.MonthlyRent,
-            AvailableFrom: a.AvailableFrom,
-            IsAvailable: a.IsAvailable,
-            Description: a.Description,
-            Amenities: ToAmenityNames(a.Amenities),
-            CreatedAt: a.CreatedAt,
-            UpdatedAt: a.UpdatedAt
-        );
+        OwnerDto? ownerDto = null;
+        if (apartment.OwnerId is not null)
+        {
+            var owner = await _ownerRepo.GetByIdAsync(apartment.OwnerId, ct);
+            if (owner is not null)
+                ownerDto = _mapper.Map<OwnerDto>(owner);
+        }
 
-        return dto;
+        var apartmentDto = _mapper.Map<ApartmentDto>(apartment);
+        apartmentDto = apartmentDto with { Owner = ownerDto };
+
+        return apartmentDto;
     }
+}
 
-    private static string[] ToAmenityNames(Amenities flags) =>
-        Enum.GetValues<Amenities>()
-            .Where(f => f != Amenities.None && flags.HasFlag(f))
-            .Select(f => f.ToString())
-            .ToArray();
+public class GetAllApartmentsHandler(IApartmentRepository repo, IOwnerRepository ownerRepo, IMapper mapper) : IRequestHandler<GetAllApartmentsQuery, IEnumerable<ApartmentDto>>
+{
+    private readonly IApartmentRepository _repo = repo;
+    private readonly IOwnerRepository _ownerRepo = ownerRepo;
+    private readonly IMapper _mapper = mapper;
+
+    public async Task<IEnumerable<ApartmentDto>> Handle(GetAllApartmentsQuery q, CancellationToken ct)
+    {
+        var apartments = await _repo.GetAllAsync(ct);
+        var list = new List<ApartmentDto>(apartments.Count);
+
+
+        foreach (var apartment in apartments)
+        {
+
+            OwnerDto? ownerDto = null;
+            if (apartment.OwnerId is not null)
+            {
+                var owner = await _ownerRepo.GetByIdAsync(apartment.OwnerId, ct);
+                if (owner is not null)
+                    ownerDto = _mapper.Map<OwnerDto>(owner);
+            }
+
+            var apartmentDto = _mapper.Map<ApartmentDto>(apartment);
+            apartmentDto = apartmentDto with { Owner = ownerDto };
+            list.Add(apartmentDto);
+        }
+
+        return list;
+    }
 }

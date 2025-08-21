@@ -3,35 +3,42 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ApartmentManagement.Infrastructure.Repositories;
 
-public sealed class ApartmentRepository : IApartmentRepository
+public sealed class ApartmentRepository(AppDbContext db) : IApartmentRepository
 {
-    private readonly AppDbContext _db;
-    public ApartmentRepository(AppDbContext db) => _db = db;
+    private readonly AppDbContext _db = db;
 
-    public async Task AddAsync(Apartment apartment, CancellationToken ct = default)
+    public Task AddAsync(Apartment apartment, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(apartment);
-        await _db.Apartments.AddAsync(apartment, ct);
+        return _db.Apartments.AddAsync(apartment, ct).AsTask();
     }
 
-    // Tracking (so caller can update)
     public Task<Apartment?> GetByIdAsync(ApartmentId id, CancellationToken ct = default) =>
         _db.Apartments
            .FirstOrDefaultAsync(x => x.Id == id, ct);
 
+    public Task<List<Apartment>> GetAllAsync(CancellationToken ct = default) =>
+        _db.Apartments
+           .AsNoTracking()
+           .ToListAsync(ct);
+
+    public Task UpdateAsync(Apartment apartment, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(apartment);
+        _db.Apartments.Update(apartment);
+        return Task.CompletedTask;
+    }
+
     public Task SaveChangesAsync(CancellationToken ct = default) =>
         _db.SaveChangesAsync(ct);
 
-    // Optional read-only variant
-    public Task<Apartment?> GetByIdNoTrackingAsync(ApartmentId id, CancellationToken ct = default) =>
-        _db.Apartments
-           .AsNoTracking()
-           .FirstOrDefaultAsync(x => x.Id == id, ct);
-
-    // Optional: bypass global filters (e.g., soft-delete)
-    public Task<Apartment?> GetByIdIncludingDeletedAsync(ApartmentId id, CancellationToken ct = default) =>
-        _db.Apartments
-           .IgnoreQueryFilters()
-           .FirstOrDefaultAsync(x => x.Id == id, ct);
+    public async Task<bool> IsApartmentFullAsync(ApartmentId id, CancellationToken ct = default)
+    {
+        var apartment = await _db.Apartments.FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (apartment == null)
+        {
+            return false;
+        }
+        return apartment.Capacity == apartment.CurrentCapacity;
+    }
 }
-

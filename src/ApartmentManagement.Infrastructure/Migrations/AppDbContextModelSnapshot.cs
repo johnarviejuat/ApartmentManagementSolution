@@ -39,8 +39,14 @@ namespace ApartmentManagement.Infrastructure.Migrations
                     b.Property<int>("Bedrooms")
                         .HasColumnType("int");
 
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("CurrentCapacity")
+                        .HasColumnType("int");
 
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
@@ -62,7 +68,16 @@ namespace ApartmentManagement.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("OwnershipAssignedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int?>("SquareFeet")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<int>("UnitNumber")
@@ -73,11 +88,83 @@ namespace ApartmentManagement.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("OwnerId");
+
                     b.ToTable("Apartments", (string)null);
+                });
+
+            modelBuilder.Entity("ApartmentManagement.Domain.Leasing.Owners.Owner", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Owners", (string)null);
+                });
+
+            modelBuilder.Entity("ApartmentManagement.Domain.Leasing.Tenants.Tenant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ApartmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("MoveInDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("MoveOutDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApartmentId");
+
+                    b.ToTable("Tenants", (string)null);
                 });
 
             modelBuilder.Entity("ApartmentManagement.Domain.Leasing.Apartments.Apartment", b =>
                 {
+                    b.HasOne("ApartmentManagement.Domain.Leasing.Owners.Owner", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.OwnsOne("ApartmentManagement.Domain.Leasing.Apartments.Address", "Address", b1 =>
                         {
                             b1.Property<Guid>("ApartmentId")
@@ -117,6 +204,204 @@ namespace ApartmentManagement.Infrastructure.Migrations
 
                     b.Navigation("Address")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ApartmentManagement.Domain.Leasing.Owners.Owner", b =>
+                {
+                    b.OwnsOne("ApartmentManagement.Domain.Leasing.Owners.Email", "Email", b1 =>
+                        {
+                            b1.Property<Guid>("OwnerId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(320)
+                                .HasColumnType("nvarchar(320)")
+                                .HasColumnName("Email");
+
+                            b1.HasKey("OwnerId");
+
+                            b1.HasIndex("Value")
+                                .IsUnique();
+
+                            b1.ToTable("Owners");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OwnerId");
+                        });
+
+                    b.OwnsOne("ApartmentManagement.Domain.Leasing.Apartments.Address", "MailingAddress", b1 =>
+                        {
+                            b1.Property<Guid>("OwnerId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("City")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)")
+                                .HasColumnName("Mail_City");
+
+                            b1.Property<string>("Line1")
+                                .IsRequired()
+                                .HasMaxLength(200)
+                                .HasColumnType("nvarchar(200)")
+                                .HasColumnName("Mail_Line1");
+
+                            b1.Property<string>("PostalCode")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("nvarchar(20)")
+                                .HasColumnName("Mail_PostalCode");
+
+                            b1.Property<string>("State")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("nvarchar(50)")
+                                .HasColumnName("Mail_State");
+
+                            b1.HasKey("OwnerId");
+
+                            b1.ToTable("Owners");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OwnerId");
+                        });
+
+                    b.OwnsOne("ApartmentManagement.Domain.Leasing.Owners.PersonName", "Name", b1 =>
+                        {
+                            b1.Property<Guid>("OwnerId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("First")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)")
+                                .HasColumnName("FirstName");
+
+                            b1.Property<string>("Last")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)")
+                                .HasColumnName("LastName");
+
+                            b1.HasKey("OwnerId");
+
+                            b1.ToTable("Owners");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OwnerId");
+                        });
+
+                    b.OwnsOne("ApartmentManagement.Domain.Leasing.Owners.Phone", "Phone", b1 =>
+                        {
+                            b1.Property<Guid>("OwnerId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(30)
+                                .HasColumnType("nvarchar(30)")
+                                .HasColumnName("Phone");
+
+                            b1.HasKey("OwnerId");
+
+                            b1.ToTable("Owners");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OwnerId");
+                        });
+
+                    b.Navigation("Email")
+                        .IsRequired();
+
+                    b.Navigation("MailingAddress");
+
+                    b.Navigation("Name")
+                        .IsRequired();
+
+                    b.Navigation("Phone");
+                });
+
+            modelBuilder.Entity("ApartmentManagement.Domain.Leasing.Tenants.Tenant", b =>
+                {
+                    b.HasOne("ApartmentManagement.Domain.Leasing.Apartments.Apartment", null)
+                        .WithMany()
+                        .HasForeignKey("ApartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.OwnsOne("ApartmentManagement.Domain.Leasing.Tenants.TenantEmail", "Email", b1 =>
+                        {
+                            b1.Property<Guid>("TenantId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(320)
+                                .HasColumnType("nvarchar(320)")
+                                .HasColumnName("Email");
+
+                            b1.HasKey("TenantId");
+
+                            b1.HasIndex("Value")
+                                .IsUnique();
+
+                            b1.ToTable("Tenants");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TenantId");
+                        });
+
+                    b.OwnsOne("ApartmentManagement.Domain.Leasing.Tenants.TenantName", "Name", b1 =>
+                        {
+                            b1.Property<Guid>("TenantId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("First")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)")
+                                .HasColumnName("FirstName");
+
+                            b1.Property<string>("Last")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)")
+                                .HasColumnName("LastName");
+
+                            b1.HasKey("TenantId");
+
+                            b1.ToTable("Tenants");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TenantId");
+                        });
+
+                    b.OwnsOne("ApartmentManagement.Domain.Leasing.Tenants.TenantPhone", "Phone", b1 =>
+                        {
+                            b1.Property<Guid>("TenantId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(30)
+                                .HasColumnType("nvarchar(30)")
+                                .HasColumnName("Phone");
+
+                            b1.HasKey("TenantId");
+
+                            b1.ToTable("Tenants");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TenantId");
+                        });
+
+                    b.Navigation("Email")
+                        .IsRequired();
+
+                    b.Navigation("Name")
+                        .IsRequired();
+
+                    b.Navigation("Phone");
                 });
 #pragma warning restore 612, 618
         }
