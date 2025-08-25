@@ -106,13 +106,15 @@ public sealed class Tenant : IAggregateRoot
         ApartmentId = apartmentId ?? throw new ArgumentNullException(nameof(apartmentId));
         Status = TenantStatus.Active;
         MoveInDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        MoveOutDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(6));
         Touch();
     }
 
     public void ChangeTenantStatus(TenantStatus TenantStatus) {
         Status = TenantStatus;
         ApartmentId = null;
-        MoveOutDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        MoveOutDate = null;
+        MoveInDate = null;
     }
 
     public void SoftDelete()

@@ -18,6 +18,8 @@ public sealed class ApartmentConfiguration : IEntityTypeConfiguration<Apartment>
         b.Property(a => a.Bathrooms).IsRequired();
         b.Property(a => a.SquareFeet);
         b.Property(a => a.MonthlyRent).HasColumnType("decimal(18,2)");
+        b.Property(a => a.AdvanceRent).HasColumnType("decimal(18,2)");
+        b.Property(a => a.SecurityDeposit).HasColumnType("decimal(18,2)");
         b.Property(a => a.Description).HasMaxLength(2000);
         b.Property(a => a.IsDeleted).HasDefaultValue(false);
 

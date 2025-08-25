@@ -1,5 +1,6 @@
 ﻿using ApartmentManagement.Application.Common;
 using ApartmentManagement.Application.Tenants;
+
 //!COMMANDS
 using ApartmentManagement.Application.Tenants.Commands.AssignToApartment;
 using ApartmentManagement.Application.Tenants.Commands.Create;

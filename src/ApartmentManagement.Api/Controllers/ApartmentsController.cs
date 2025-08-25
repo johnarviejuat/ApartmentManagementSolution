@@ -61,6 +61,8 @@ public sealed class ApartmentsController(ISender sender) : ControllerBase
             dto.Bathrooms,
             dto.Capacity,
             dto.MonthlyRent,
+            dto.AdvanceRent,
+            dto.SecurityDeposit,
             dto.SquareFeet,
             dto.AvailableFrom,
             dto.Description,

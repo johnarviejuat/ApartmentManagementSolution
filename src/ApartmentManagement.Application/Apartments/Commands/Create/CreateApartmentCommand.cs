@@ -12,6 +12,8 @@ public record CreateApartmentCommand(
     int Bathrooms,
     int Capacity,
     decimal MonthlyRent,
+    decimal? AdvanceRent,
+    decimal ? SecurityDeposit,
     int? SquareFeet,
     DateOnly? AvailableFrom,
     string? Description,

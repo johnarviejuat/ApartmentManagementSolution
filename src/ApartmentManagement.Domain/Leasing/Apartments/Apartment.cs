@@ -27,6 +27,8 @@ public sealed class Apartment : IAggregateRoot
      int bathrooms,
      int capacity,
      decimal monthlyRent,
+     decimal? advanceRent,
+     decimal? securityDeposit,
      int? squareFeet = null,
      DateOnly? availableFrom = null,
      string? description = null,
@@ -41,6 +43,8 @@ public sealed class Apartment : IAggregateRoot
         SetBathrooms(bathrooms);
         SetCapacity(capacity);
         ChangeMonthlyRent(monthlyRent);
+        ChangeAdvanceRent(advanceRent);
+        ChangeSecurityDeposit(securityDeposit);
         SquareFeet = squareFeet;
         AvailableFrom = availableFrom;
         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
@@ -88,6 +92,8 @@ public sealed class Apartment : IAggregateRoot
 
     // Pricing & availability (simple decimal for rent; introduce Money VO later if needed)
     public decimal MonthlyRent { get; private set; }
+    public decimal AdvanceRent { get; private set; }
+    public decimal SecurityDeposit { get; private set; }
     public DateOnly? AvailableFrom { get; private set; }
     public bool IsAvailable { get; private set; }
 
@@ -148,6 +154,22 @@ public sealed class Apartment : IAggregateRoot
     {
         ArgumentOutOfRangeException.ThrowIfNegative(monthlyRent);
         MonthlyRent = monthlyRent; Touch();
+    }
+
+    public void ChangeAdvanceRent(decimal? advanceRent)
+    {
+        if (advanceRent is < 0)
+            throw new ArgumentOutOfRangeException(nameof(advanceRent));
+        AdvanceRent = advanceRent ?? 0;
+        Touch();
+    }
+
+    public void ChangeSecurityDeposit(decimal? securityDeposit)
+    {
+        if (securityDeposit is < 0)
+            throw new ArgumentOutOfRangeException(nameof(securityDeposit));
+        SecurityDeposit = securityDeposit ?? 0;
+        Touch();
     }
 
     public void SetAvailableFrom(DateOnly? date)

@@ -4,6 +4,7 @@ using ApartmentManagement.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ApartmentManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250825135228_CreatePaymentTable")]
+    partial class CreatePaymentTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -26,9 +29,6 @@ namespace ApartmentManagement.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("AdvanceRent")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("AvailableFrom")
                         .HasColumnType("datetime2");
@@ -73,9 +73,6 @@ namespace ApartmentManagement.Infrastructure.Migrations
 
                     b.Property<DateTime?>("OwnershipAssignedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<decimal>("SecurityDeposit")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int?>("SquareFeet")
                         .HasColumnType("int");

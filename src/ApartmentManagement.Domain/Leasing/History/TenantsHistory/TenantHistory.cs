@@ -1,10 +1,4 @@
 ﻿using ApartmentManagement.Domain.Leasing.Apartments;
-using ApartmentManagement.Domain.Leasing.Tenants;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ApartmentManagement.Domain.Leasing.History.TenantsHistory
 {
@@ -49,10 +43,6 @@ namespace ApartmentManagement.Domain.Leasing.History.TenantsHistory
         public string? Notes { get; set; }
         public int Status { get; set; }
         public bool IsDeleted { get; set; }
-
-        // Communication & Property Management
-        public List<string> CommunicationLog { get; set; } = new List<string>(); // Record of communications
-        public Guid? PropertyManagerId { get; set; } // Reference to property manager responsible for tenant
 
         // Important Dates
         public DateTime CreatedAt { get; private set; }

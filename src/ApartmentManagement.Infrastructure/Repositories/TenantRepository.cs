@@ -14,6 +14,12 @@ public sealed class TenantRepository(AppDbContext db) : ITenantRepository
     public Task<Tenant?> GetByIdAsync(TenantId id, CancellationToken ct = default)
         => _db.Tenants.FirstOrDefaultAsync(t => t.Id == id, ct)!;
 
+    public Task<List<Tenant>> ListByApartmentIdAsync(ApartmentId apartmentId, CancellationToken ct = default)
+        => _db.Tenants
+              .Where(t => t.ApartmentId == apartmentId)
+              .OrderByDescending(t => t.MoveInDate)
+              .ToListAsync(ct);
+
     public Task SaveChangesAsync(CancellationToken ct = default)
         => _db.SaveChangesAsync(ct);
 

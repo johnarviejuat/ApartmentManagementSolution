@@ -9,9 +9,10 @@ public sealed record ApartmentRequest(
     int Bathrooms,
     int Capacity,
     decimal MonthlyRent,
+    decimal? AdvanceRent,
+    decimal? SecurityDeposit,
     int? SquareFeet,
     DateOnly? AvailableFrom,
     string? Description,
-    IReadOnlyCollection<string>? Amenities,
     ApartmentStatus Status
 );

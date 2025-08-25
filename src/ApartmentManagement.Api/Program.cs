@@ -6,6 +6,7 @@ using ApartmentManagement.Application.Owners.Mapping;
 using ApartmentManagement.Application.Tenants.Mapping;
 using ApartmentManagement.Domain.Leasing.Apartments;
 using ApartmentManagement.Domain.Leasing.Owners;
+using ApartmentManagement.Domain.Leasing.Payments;
 using ApartmentManagement.Domain.Leasing.Tenants;
 using ApartmentManagement.Infrastructure;
 using ApartmentManagement.Infrastructure.Repositories;
@@ -64,6 +65,7 @@ builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlServer(builder.Conf
 builder.Services.AddScoped<IApartmentRepository, ApartmentRepository>();
 builder.Services.AddScoped<IOwnerRepository, OwnerRepository>();
 builder.Services.AddScoped<ITenantRepository, TenantRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
 // MediatR
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateApartmentHandler).Assembly));

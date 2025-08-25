@@ -23,6 +23,8 @@ public sealed class CreateApartmentHandler(IApartmentRepository repo, IValidator
             c.Bathrooms,
             c.Capacity,
             c.MonthlyRent,
+            c.AdvanceRent,
+            c.SecurityDeposit,
             c.SquareFeet,
             c.AvailableFrom,
             c.Description,     

@@ -18,9 +18,19 @@ public sealed class CreateApartmentValidator : AbstractValidator<CreateApartment
                 .GreaterThan(0)
                 .When(x => x.SquareFeet.HasValue)
                 .WithMessage("Square feet must be greater than zero when specified");
+
             RuleFor(x => x.MonthlyRent)
                 .GreaterThanOrEqualTo(0)
                 .WithMessage("Monthly rent must be zero or more");
+
+            RuleFor(x => x.AdvanceRent)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage("Advance rent must be zero or more");
+
+            RuleFor(x => x.SecurityDeposit)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage("Security must be zero or more");
+
             RuleFor(x => x.Description)
                 .MaximumLength(2000)
                 .When(x => !string.IsNullOrWhiteSpace(x.Description))

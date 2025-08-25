@@ -4,6 +4,7 @@ using ApartmentManagement.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ApartmentManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250822022213_CloneDatabaseMigration")]
+    partial class CloneDatabaseMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -26,9 +29,6 @@ namespace ApartmentManagement.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("AdvanceRent")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("AvailableFrom")
                         .HasColumnType("datetime2");
@@ -74,9 +74,6 @@ namespace ApartmentManagement.Infrastructure.Migrations
                     b.Property<DateTime?>("OwnershipAssignedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("SecurityDeposit")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<int?>("SquareFeet")
                         .HasColumnType("int");
 
@@ -94,89 +91,6 @@ namespace ApartmentManagement.Infrastructure.Migrations
                     b.HasIndex("OwnerId");
 
                     b.ToTable("Apartments", (string)null);
-                });
-
-            modelBuilder.Entity("ApartmentManagement.Domain.Leasing.History.TenantsHistory.TenantHistory", b =>
-                {
-                    b.Property<Guid>("Guid")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("Id");
-
-                    b.Property<string>("ApartmentConditionAtMoveIn")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<string>("ApartmentConditionAtMoveOut")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<Guid?>("ApartmentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("EvictionReason")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<bool>("HasEarlyTermination")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("InspectionReport")
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<bool>("IsRenewed")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LeaseRenewalDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("LeaseTerms")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime?>("MoveInDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("MoveOutDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<decimal?>("RentAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("SecurityDeposit")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("WasEvicted")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Guid");
-
-                    b.HasIndex("ApartmentId");
-
-                    b.HasIndex("TenantId", "CreatedAt");
-
-                    b.ToTable("TenantHistories", (string)null);
                 });
 
             modelBuilder.Entity("ApartmentManagement.Domain.Leasing.Owners.Owner", b =>
@@ -203,57 +117,6 @@ namespace ApartmentManagement.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Owners", (string)null);
-                });
-
-            modelBuilder.Entity("ApartmentManagement.Domain.Leasing.Payments.Payment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid?>("ApartmentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Method")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTime>("PaidAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ReferenceNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<Guid?>("TenantHistoryId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApartmentId");
-
-                    b.HasIndex("TenantHistoryId");
-
-                    b.HasIndex("TenantId");
-
-                    b.ToTable("Payments", (string)null);
                 });
 
             modelBuilder.Entity("ApartmentManagement.Domain.Leasing.Tenants.Tenant", b =>
@@ -341,87 +204,6 @@ namespace ApartmentManagement.Infrastructure.Migrations
 
                     b.Navigation("Address")
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("ApartmentManagement.Domain.Leasing.History.TenantsHistory.TenantHistory", b =>
-                {
-                    b.HasOne("ApartmentManagement.Domain.Leasing.Apartments.Apartment", null)
-                        .WithMany()
-                        .HasForeignKey("ApartmentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.OwnsOne("ApartmentManagement.Domain.Leasing.History.TenantsHistory.TenantEmail", "Email", b1 =>
-                        {
-                            b1.Property<Guid>("TenantHistoryGuid")
-                                .HasColumnType("uniqueidentifier");
-
-                            b1.Property<string>("Value")
-                                .IsRequired()
-                                .HasMaxLength(320)
-                                .HasColumnType("nvarchar(320)")
-                                .HasColumnName("Email");
-
-                            b1.HasKey("TenantHistoryGuid");
-
-                            b1.HasIndex("Value");
-
-                            b1.ToTable("TenantHistories");
-
-                            b1.WithOwner()
-                                .HasForeignKey("TenantHistoryGuid");
-                        });
-
-                    b.OwnsOne("ApartmentManagement.Domain.Leasing.History.TenantsHistory.TenantName", "Name", b1 =>
-                        {
-                            b1.Property<Guid>("TenantHistoryGuid")
-                                .HasColumnType("uniqueidentifier");
-
-                            b1.Property<string>("First")
-                                .IsRequired()
-                                .HasMaxLength(100)
-                                .HasColumnType("nvarchar(100)")
-                                .HasColumnName("FirstName");
-
-                            b1.Property<string>("Last")
-                                .IsRequired()
-                                .HasMaxLength(100)
-                                .HasColumnType("nvarchar(100)")
-                                .HasColumnName("LastName");
-
-                            b1.HasKey("TenantHistoryGuid");
-
-                            b1.ToTable("TenantHistories");
-
-                            b1.WithOwner()
-                                .HasForeignKey("TenantHistoryGuid");
-                        });
-
-                    b.OwnsOne("ApartmentManagement.Domain.Leasing.History.TenantsHistory.TenantPhone", "Phone", b1 =>
-                        {
-                            b1.Property<Guid>("TenantHistoryGuid")
-                                .HasColumnType("uniqueidentifier");
-
-                            b1.Property<string>("Value")
-                                .IsRequired()
-                                .HasMaxLength(30)
-                                .HasColumnType("nvarchar(30)")
-                                .HasColumnName("Phone");
-
-                            b1.HasKey("TenantHistoryGuid");
-
-                            b1.ToTable("TenantHistories");
-
-                            b1.WithOwner()
-                                .HasForeignKey("TenantHistoryGuid");
-                        });
-
-                    b.Navigation("Email")
-                        .IsRequired();
-
-                    b.Navigation("Name")
-                        .IsRequired();
-
-                    b.Navigation("Phone");
                 });
 
             modelBuilder.Entity("ApartmentManagement.Domain.Leasing.Owners.Owner", b =>
@@ -538,25 +320,6 @@ namespace ApartmentManagement.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Phone");
-                });
-
-            modelBuilder.Entity("ApartmentManagement.Domain.Leasing.Payments.Payment", b =>
-                {
-                    b.HasOne("ApartmentManagement.Domain.Leasing.Apartments.Apartment", null)
-                        .WithMany()
-                        .HasForeignKey("ApartmentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("ApartmentManagement.Domain.Leasing.History.TenantsHistory.TenantHistory", null)
-                        .WithMany()
-                        .HasForeignKey("TenantHistoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("ApartmentManagement.Domain.Leasing.Tenants.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("ApartmentManagement.Domain.Leasing.Tenants.Tenant", b =>

@@ -11,12 +11,15 @@
         int CurrentCapacity,
         int? SquareFeet,
         decimal MonthlyRent,
+        decimal AdvanceRent,
+        decimal SecurityDeposit,
         DateOnly? AvailableFrom,
         bool IsAvailable,
         string? Description,
         DateTime CreatedAt,
         DateTime UpdatedAt,
         int Status,
-        OwnerDto? Owner = null
+        OwnerDto? Owner = null,
+        IReadOnlyList<TenantDto> Tenants = null!
     );
 }
