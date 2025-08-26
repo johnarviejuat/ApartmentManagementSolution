@@ -51,6 +51,4 @@ public sealed class AssignTenantToApartmentHandler(
 
         return Unit.Value;
     }
-
-
 }

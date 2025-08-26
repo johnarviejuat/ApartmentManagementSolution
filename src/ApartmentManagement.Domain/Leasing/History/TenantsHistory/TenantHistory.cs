@@ -1,4 +1,5 @@
 ﻿using ApartmentManagement.Domain.Leasing.Apartments;
+using ApartmentManagement.Domain.Leasing.Tenants;
 
 namespace ApartmentManagement.Domain.Leasing.History.TenantsHistory
 {
@@ -21,7 +22,7 @@ namespace ApartmentManagement.Domain.Leasing.History.TenantsHistory
         public HistoryId Guid { get; private set; } = default!;
 
         // Identity
-        public Guid TenantId { get; set; } = default!;
+        public TenantId TenantId { get; set; } = default!;
         public TenantName Name { get; set; } = default!;
         public TenantEmail Email { get; set; } = default!;
         public TenantPhone? Phone { get; set; }

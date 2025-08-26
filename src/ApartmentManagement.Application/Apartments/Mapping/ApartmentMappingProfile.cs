@@ -30,6 +30,7 @@ namespace ApartmentManagement.Application.Apartments.Mapping
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.UpdatedAt))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status));
+
             CreateMap<Address, AddressDto>();
         }
     }

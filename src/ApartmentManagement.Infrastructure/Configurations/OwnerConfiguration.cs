@@ -1,7 +1,6 @@
 ﻿using ApartmentManagement.Domain.Leasing.Owners;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ApartmentManagement.Infrastructure.Configurations;
 
@@ -9,57 +8,59 @@ public sealed class OwnerConfiguration : IEntityTypeConfiguration<Owner>
 {
     public void Configure(EntityTypeBuilder<Owner> b)
     {
+        // Table
         b.ToTable("Owners");
 
-        // Key
+        // Key (value object)
         b.HasKey(o => o.Id);
         b.Property(o => o.Id)
             .HasConversion(v => v.Value, v => new OwnerId(v))
             .ValueGeneratedNever();
 
-        // PersonName (owned)
+        // Owned: Name (First/Last)
         b.OwnsOne(o => o.Name, nb =>
         {
-            nb.Property(p => p.First).HasColumnName("FirstName").HasMaxLength(100).IsRequired();
-            nb.Property(p => p.Last).HasColumnName("LastName").HasMaxLength(100).IsRequired();
+            nb.Property(p => p.First).HasMaxLength(100).HasColumnName("FirstName").IsRequired();
+            nb.Property(p => p.Last).HasMaxLength(100).HasColumnName("LastName").IsRequired();
         });
 
-        // Email (single-value VO -> scalar)
-        b.Property(o => o.Email)
-            .HasConversion(v => v.Value, v => new Email(v))
-            .HasColumnName("Email")
-            .HasMaxLength(320)
-            .IsRequired();
-
-        // Phone (nullable, single-value VO -> scalar) — use a ValueConverter to handle nulls
-        var phoneConverter = new ValueConverter<Phone?, string?>(
-            v => v == null ? null : v.Value,
-            v => v == null ? null : new Phone(v)
-        );
-
-        b.Property(o => o.Phone)
-            .HasConversion(phoneConverter)
-            .HasColumnName("Phone")
-            .HasMaxLength(30);
-
-        // Mailing address (owned, optional)
-        b.OwnsOne(o => o.MailingAddress, ab =>
+        // Owned: Email (Value) with unique index
+        b.OwnsOne(o => o.Email, nb =>
         {
-            ab.Property(a => a.Line1).HasColumnName("Mail_Line1").HasMaxLength(200);
-            ab.Property(a => a.City).HasColumnName("Mail_City").HasMaxLength(100);
-            ab.Property(a => a.State).HasColumnName("Mail_State").HasMaxLength(100);
-            ab.Property(a => a.PostalCode).HasColumnName("Mail_PostalCode").HasMaxLength(20);
+            nb.Property(p => p.Value)
+              .HasMaxLength(320)
+              .HasColumnName("Email")
+              .IsRequired();
+
+            // Unique email per owner
+            nb.HasIndex(p => p.Value).IsUnique();
         });
-        b.Navigation(o => o.MailingAddress).IsRequired(false);
 
+        // Owned: Phone (Value)
+        b.OwnsOne(o => o.Phone, nb =>
+        {
+            nb.Property(p => p.Value)
+              .HasMaxLength(30)
+              .HasColumnName("Phone");
+        });
+
+        // Owned: MailingAddress
+        b.OwnsOne(o => o.MailingAddress, nb =>
+        {
+            nb.Property(p => p.Line1).HasMaxLength(200).HasColumnName("Mail_Line1");
+            nb.Property(p => p.City).HasMaxLength(100).HasColumnName("Mail_City");
+            nb.Property(p => p.State).HasMaxLength(50).HasColumnName("Mail_State");
+            nb.Property(p => p.PostalCode).HasMaxLength(20).HasColumnName("Mail_PostalCode");
+        });
+
+        // Scalars
         b.Property(o => o.Notes).HasMaxLength(1000);
-
         b.Property(o => o.IsActive).IsRequired();
         b.Property(o => o.IsDeleted).IsRequired();
         b.Property(o => o.CreatedAt).IsRequired();
         b.Property(o => o.UpdatedAt).IsRequired();
 
-        // Unique Email (works since Email is mapped as scalar)
-        b.HasIndex(o => o.Email).IsUnique();
+        // Optional global filter (only if you want soft-delete behavior here too)
+        // b.HasQueryFilter(o => !o.IsDeleted);
     }
 }

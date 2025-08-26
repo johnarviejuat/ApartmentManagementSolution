@@ -4,6 +4,7 @@ using ApartmentManagement.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ApartmentManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250826014756_UpdateLatestDatabaseTable")]
+    partial class UpdateLatestDatabaseTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -103,10 +106,12 @@ namespace ApartmentManagement.Infrastructure.Migrations
                         .HasColumnName("Id");
 
                     b.Property<string>("ApartmentConditionAtMoveIn")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<string>("ApartmentConditionAtMoveOut")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<Guid?>("ApartmentId")
                         .HasColumnType("uniqueidentifier");
@@ -122,7 +127,8 @@ namespace ApartmentManagement.Infrastructure.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("InspectionReport")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
@@ -176,41 +182,6 @@ namespace ApartmentManagement.Infrastructure.Migrations
                     b.ToTable("TenantHistories", (string)null);
                 });
 
-            modelBuilder.Entity("ApartmentManagement.Domain.Leasing.Leases.Lease", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ApartmentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Credit")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("DepositHeld")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("DepositRequired")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("MonthlyRent")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateOnly>("NextDueDate")
-                        .HasColumnType("date");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "ApartmentId")
-                        .IsUnique();
-
-                    b.ToTable("Leases", (string)null);
-                });
-
             modelBuilder.Entity("ApartmentManagement.Domain.Leasing.Owners.Owner", b =>
                 {
                     b.Property<Guid>("Id")
@@ -246,16 +217,11 @@ namespace ApartmentManagement.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<Guid>("ApartmentId")
+                    b.Property<Guid?>("ApartmentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<decimal>("DepositPortion")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(18,2)")
-                        .HasDefaultValue(0m);
 
                     b.Property<string>("Method")
                         .IsRequired()
@@ -586,8 +552,7 @@ namespace ApartmentManagement.Infrastructure.Migrations
                     b.HasOne("ApartmentManagement.Domain.Leasing.Apartments.Apartment", null)
                         .WithMany()
                         .HasForeignKey("ApartmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ApartmentManagement.Domain.Leasing.History.TenantsHistory.TenantHistory", null)
                         .WithMany()
