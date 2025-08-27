@@ -12,6 +12,7 @@
         bool IsActive,
         DateTime CreatedAt,
         DateTime UpdatedAt,
-        ApartmentDto? Apartment = null
+        string? Apartment = "",
+        LeaseDto? Lease = null
     );
 }

@@ -54,7 +54,7 @@ public sealed class CreatePaymentHandler(
                 await _paymentRepo.SaveChangesAsync(ct);
 
                 // 2) apply to lease and capture what happened
-                var apply = await UpsertLeaseAndApplyAsync(c.TenantId, c.ApartmentId, payment.Amount, ct);
+                var apply = await UpsertLeaseAndApplyAsync(c.TenantId, c.ApartmentId, payment.Amount, ct, createIfMissing: true);
 
                 // 3) (optional) if you already store DepositPortion on Payment, tag it:
                 if (apply.DepositPortion > 0m)
@@ -65,9 +65,6 @@ public sealed class CreatePaymentHandler(
 
                 // 4) you now know if the "next due" was paid:
                 var paidNextDue = apply.MonthsCovered >= 1;
-
-                // If you want to RETURN these details from the API,
-                // change your controller to include them (see next section).
                 return payment.Id;
             }
             catch (Exception ex) when (IsUniqueRefViolation(ex) && attempt < maxAttempts)
@@ -88,48 +85,65 @@ public sealed class CreatePaymentHandler(
     }
 
     private async Task<LeaseApplyResult> UpsertLeaseAndApplyAsync(
-     TenantId tenantId, ApartmentId apartmentId, decimal amount, CancellationToken ct)
+     TenantId tenantId,
+     ApartmentId apartmentId,
+     decimal amount,
+     CancellationToken ct,
+     bool createIfMissing = false)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(amount, 0m);
+
         var lease = await _leaseRepo.GetActiveAsync(tenantId, apartmentId, ct);
         if (lease is null)
         {
+            if (!createIfMissing)
+                throw new InvalidOperationException(
+                    $"No active lease for Tenant '{tenantId.Value}' and Apartment '{apartmentId.Value}'.");
+
+            var hasHistory = await _leaseRepo.ExistsForTenantApartmentAsync(tenantId, apartmentId, ct);
+            if (hasHistory)
+                throw new InvalidOperationException(
+                    "No active lease exists but history was found. Use the renew endpoint before taking payment.");
+
             var apt = await _apartmentRepo.GetByIdAsync(apartmentId, ct)
-                      ?? throw new InvalidOperationException($"Apartment '{apartmentId.Value}' not found when creating lease.");
+                      ?? throw new InvalidOperationException($"Apartment '{apartmentId.Value}' not found.");
 
-            var firstDue = ComputeFirstDueDate(apt.AvailableFrom);
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var available = apt.AvailableFrom ?? today;
+            var startDate = available > today ? available : today;
 
-            // Choose how you derive required deposit (absolute vs "months"):
-            var depositRequired = apt.SecurityDeposit;             // absolute amount
-                                                                   // var depositRequired = apt.MonthlyRent * apt.SecurityDeposit; // if "months"
+            var firstDue = ComputeFirstDueDate(startDate);
+            var depositRequired = apt.SecurityDeposit;
 
-            lease = new Lease(tenantId, apartmentId, apt.MonthlyRent, firstDue, depositRequired);
+            lease = new Lease(tenantId, apartmentId, apt.MonthlyRent, firstDue, depositRequired, startDate);
             await _leaseRepo.AddAsync(lease, ct);
         }
 
-        var startDue = lease.NextDueDate;
+        var coverageStart = lease.NextDueDate;
 
-        // Hold deposit first (if not fully funded), rest goes to rent
-        var needDeposit = Math.Max(0m, lease.DepositRequired - lease.DepositHeld);
-        var depositPart = Math.Min(needDeposit, amount);
-        var rentPart = amount - depositPart;
+        // deposit first
+        var depositNeeded = Math.Max(0m, lease.DepositRequired - lease.DepositHeld);
+        var depositPortion = Math.Min(depositNeeded, amount);
+        if (depositPortion > 0m)
+            lease.DepositHeld = decimal.Round(lease.DepositHeld + depositPortion, 2, MidpointRounding.AwayFromZero);
 
-        if (depositPart > 0m)
-            lease.DepositHeld = decimal.Round(lease.DepositHeld + depositPart, 2, MidpointRounding.AwayFromZero);
-
-        var (monthsCovered, remainder) = lease.ApplyPayment(rentPart);
+        // then rent
+        var rentPortion = amount - depositPortion;
+        var (monthsCovered, remainder) = rentPortion > 0m
+            ? lease.ApplyPayment(rentPortion)
+            : (0, lease.Credit);
 
         await _leaseRepo.SaveChangesAsync(ct);
 
         return new LeaseApplyResult(
-            CoverageStart: startDue,
+            CoverageStart: coverageStart,
             MonthsCovered: monthsCovered,
             NewNextDueDate: lease.NextDueDate,
-            RentPortion: rentPart,
-            DepositPortion: depositPart,
+            RentPortion: rentPortion,
+            DepositPortion: depositPortion,
             NewCredit: remainder
         );
     }
-
 
     private static DateOnly ComputeFirstDueDate(DateOnly? availableFrom)
     {

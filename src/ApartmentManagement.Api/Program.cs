@@ -3,6 +3,7 @@ using ApartmentManagement.Application.Apartments;
 using ApartmentManagement.Application.Apartments.Mapping;
 using ApartmentManagement.Application.Behaviors;
 using ApartmentManagement.Application.Common;
+using ApartmentManagement.Application.Leases.Mapping;
 using ApartmentManagement.Application.Owners.Mapping;
 using ApartmentManagement.Application.Payments;
 using ApartmentManagement.Application.Payments.Mapping;
@@ -114,6 +115,7 @@ builder.Services.AddAutoMapper(typeof(ApartmentMappingProfile));
 builder.Services.AddAutoMapper(typeof(OwnerMappingProfile));
 builder.Services.AddAutoMapper(typeof(TenantMappingProfile));
 builder.Services.AddAutoMapper(typeof(PaymentMappingProfile));
+builder.Services.AddAutoMapper(typeof(LeaseMappingProfile));
 
 var app = builder.Build();
 

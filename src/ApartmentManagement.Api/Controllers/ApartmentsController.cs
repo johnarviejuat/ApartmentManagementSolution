@@ -98,12 +98,12 @@ namespace ApartmentManagement.Api.Controllers
             return NoContent();
         }
 
-        [HttpPut("{apartmentId:guid}/owner/{ownerId:guid}")]
-        public async Task<IActionResult> AssignOwner(Guid apartmentId, Guid ownerId, CancellationToken ct)
+        [HttpPut("assign")]
+        public async Task<IActionResult> AssignOwner([FromBody] AssignOwnerToApartmentCommand cmd, CancellationToken ct)
         {
             try
             {
-                await _sender.Send(new AssignOwnerToApartmentCommand(ownerId, apartmentId), ct);
+                await _sender.Send(cmd, ct);
                 return NoContent();
             }
             catch (FluentValidation.ValidationException ex)

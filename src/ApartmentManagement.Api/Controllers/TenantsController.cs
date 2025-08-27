@@ -1,10 +1,12 @@
 ﻿using ApartmentManagement.Application.Common;
+using ApartmentManagement.Application.Common.Request;
 using ApartmentManagement.Application.Tenants;
 
 //!COMMANDS
 using ApartmentManagement.Application.Tenants.Commands.AssignToApartment;
 using ApartmentManagement.Application.Tenants.Commands.Create;
 using ApartmentManagement.Application.Tenants.Commands.RemoveToApartment;
+using ApartmentManagement.Application.Tenants.Commands.RenewToApartment;
 using ApartmentManagement.Domain.Leasing.Tenants;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -46,12 +48,12 @@ namespace ApartmentManagement.Api.Controllers
             return dto is null ? NotFound() : Ok(dto);
         }
 
-        [HttpPut("{tenantId:guid}/apartment/{apartmentId:guid}")]
-        public async Task<IActionResult> AssignToApartment(Guid tenantId, Guid apartmentId, CancellationToken ct)
+        [HttpPost("create")]
+        public async Task<IActionResult> AssignToApartment([FromBody] AssignTenantToApartmentCommand cmd, CancellationToken ct)
         {
             try
             {
-                await _sender.Send(new AssignTenantToApartmentCommand(tenantId, apartmentId), ct);
+                await _sender.Send(cmd, ct);
                 return NoContent();
             }
             catch (FluentValidation.ValidationException ex)
@@ -72,8 +74,41 @@ namespace ApartmentManagement.Api.Controllers
             }
         }
 
-        [HttpDelete("{tenantId:guid}/apartment/{apartmentId:guid}")]
-        public async Task<IActionResult> RemoveFromApartment(Guid tenantId, Guid apartmentId, [FromQuery] TenantStatus tenantStatus, CancellationToken ct)
+        [HttpPut("renew")]
+        public async Task<IActionResult> RenewToApartment([FromBody] RenewLeaseRequest req, CancellationToken ct) {
+            try
+            {
+                await _sender.Send(new RenewToaApartmentCommand(
+                     TenantId: req.TenantId,
+                     ApartmentId: req.ApartmentId,
+                     NewStartDate: req.NewStartDate,
+                     NewMonthlyRent: req.NewMonthlyRent,
+                     NewDepositRequired: req.NewDepositRequired,
+                     CarryOverCredit: req.CarryOverCredit,
+                     CarryOverDeposit: req.CarryOverDeposit
+                 ), ct);
+                return NoContent();
+            }
+            catch (FluentValidation.ValidationException ex)
+            {
+                var errors = ex.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+
+                return ValidationProblem(new ValidationProblemDetails(errors)
+                {
+                    Title = "Validation failed",
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+            catch (KeyNotFoundException nf)
+            {
+                return Problem(title: nf.Message, statusCode: StatusCodes.Status404NotFound);
+            }
+        }
+
+        [HttpDelete("terminate")]
+        public async Task<IActionResult> RemoveFromApartment([FromQuery] Guid tenantId, [FromQuery] Guid apartmentId, [FromQuery] TenantStatus tenantStatus, CancellationToken ct)
         {
             try
             {

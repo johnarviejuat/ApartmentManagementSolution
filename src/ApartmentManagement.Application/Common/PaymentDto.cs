@@ -8,7 +8,7 @@
         string ReferenceNumber,
         string Notes,
         decimal DepositPortion,
-        ApartmentDto? Apartment = null,
-        TenantDto? Tenant = null
+        string? Apartment = "",
+        string? Tenant = ""
     );
 }

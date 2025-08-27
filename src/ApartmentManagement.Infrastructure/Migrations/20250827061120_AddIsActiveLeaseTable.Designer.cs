@@ -4,6 +4,7 @@ using ApartmentManagement.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ApartmentManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250827061120_AddIsActiveLeaseTable")]
+    partial class AddIsActiveLeaseTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -194,13 +197,8 @@ namespace ApartmentManagement.Infrastructure.Migrations
                     b.Property<decimal>("DepositRequired")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateOnly?>("EndDate")
-                        .HasColumnType("date");
-
                     b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
+                        .HasColumnType("bit");
 
                     b.Property<decimal>("MonthlyRent")
                         .HasColumnType("decimal(18,2)");
@@ -208,24 +206,13 @@ namespace ApartmentManagement.Infrastructure.Migrations
                     b.Property<DateOnly>("NextDueDate")
                         .HasColumnType("date");
 
-                    b.Property<Guid?>("PreviousLeaseId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateOnly>("StartDate")
-                        .HasColumnType("date");
-
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApartmentId", "IsActive");
-
                     b.HasIndex("TenantId", "ApartmentId")
-                        .IsUnique()
-                        .HasFilter("[IsActive] = 1");
-
-                    b.HasIndex("TenantId", "IsActive");
+                        .IsUnique();
 
                     b.ToTable("Leases", (string)null);
                 });

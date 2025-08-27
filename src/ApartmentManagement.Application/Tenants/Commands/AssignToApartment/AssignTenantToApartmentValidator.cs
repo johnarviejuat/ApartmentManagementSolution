@@ -1,4 +1,5 @@
 ﻿using ApartmentManagement.Domain.Leasing.Apartments;
+using ApartmentManagement.Domain.Leasing.Leases;
 using ApartmentManagement.Domain.Leasing.Payments;
 using ApartmentManagement.Domain.Leasing.Tenants;
 using FluentValidation;
@@ -10,7 +11,7 @@ namespace ApartmentManagement.Application.Tenants.Commands.AssignToApartment
         private readonly IApartmentRepository _apartmentRepo;
         private readonly IPaymentRepository _paymentRepo;
 
-        public AssignTenantToApartmentValidator(IApartmentRepository apartmentRepo, IPaymentRepository paymentRepo)
+        public AssignTenantToApartmentValidator(IApartmentRepository apartmentRepo, ILeaseRepository leaseRepo)
         {
             _apartmentRepo = apartmentRepo;
 
@@ -24,7 +25,7 @@ namespace ApartmentManagement.Application.Tenants.Commands.AssignToApartment
             RuleFor(c => c)
                .MustAsync(async (cmd, ct) =>
                {
-                   var ok = await paymentRepo.ExistsForTenantApartmentAsync(
+                   var ok = await leaseRepo.ExistsForTenantApartmentAsync(
                        new TenantId(cmd.TenantId),
                        new ApartmentId(cmd.ApartmentId),
                        ct);
