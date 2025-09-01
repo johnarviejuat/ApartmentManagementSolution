@@ -7,7 +7,10 @@ namespace Catalog.Application.Apartments.Commands.Create;
 public record CreateApartmentCommand(
     string Name,
     int UnitNumber,
-    AddressDto Address,
+    string Line1,
+    string City,
+    string State,
+    string PostalCode,
     int Bedrooms,
     int Bathrooms,
     int Capacity,

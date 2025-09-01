@@ -37,7 +37,11 @@ namespace People.Application.Tenants.Commands.RemoveToApartment
             }
 
             // 5) Remove Lease associated with the tenant and apartment
-            lease?.Terminate();
+            if (lease is not null)
+            {
+                lease.Terminate();
+                await _leaseRepo.SaveChangesAsync(ct);
+            }
 
             // 6) Save changes to the apartment
             await _apartmentRepo.UpdateAsync(apartment!, ct);

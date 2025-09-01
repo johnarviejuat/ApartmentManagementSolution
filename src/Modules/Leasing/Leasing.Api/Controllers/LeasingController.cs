@@ -11,12 +11,6 @@ namespace Leasing.Api.Controllers
     {
         private readonly ISender _sender = sender;
 
-        [HttpGet("all")]
-        public async Task<ActionResult<IEnumerable<LeaseDto>>> GetAll()
-        {
-            var dtos = await _sender.Send(new GetAllLeaseQuery());
-            return Ok(dtos);
-        }
 
         [HttpGet("{id:Guid}")]
         public async Task<ActionResult<LeaseDto>> GetById(Guid id)
@@ -24,5 +18,13 @@ namespace Leasing.Api.Controllers
             var dto = await _sender.Send(new GetLeaseAgreementQuery(id));
             return dto is null ? NotFound() : Ok(dto);
         }
+
+        [HttpGet("all")]
+        public async Task<ActionResult<IEnumerable<LeaseDto>>> GetAll()
+        {
+            var dtos = await _sender.Send(new GetAllLeaseQuery());
+            return Ok(dtos);
+        }
+
     }
 }

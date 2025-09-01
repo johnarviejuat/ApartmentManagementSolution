@@ -10,11 +10,9 @@ namespace Leasing.Infrastructure.Persistence.Repositories
 
         public Task<Lease?> GetActiveAsync(Guid tenantId, Guid apartmentId, CancellationToken ct = default) =>
             _db.Leases
-               .AsNoTracking()
-               .FirstOrDefaultAsync(l =>
-                    l.TenantId == tenantId &&
-                    l.ApartmentId == apartmentId &&
-                    l.IsActive, ct);
+               .SingleOrDefaultAsync(l => l.TenantId == tenantId
+                                       && l.ApartmentId == apartmentId
+                                       && l.IsActive, ct);
 
         public Task<bool> ExistsForTenantApartmentAsync(Guid tenantId, Guid apartmentId, CancellationToken ct = default) =>
             _db.Leases
@@ -27,8 +25,8 @@ namespace Leasing.Infrastructure.Persistence.Repositories
         public Task<List<Lease>> GetAllAsync(CancellationToken ct = default) =>
             _db.Leases.AsNoTracking().ToListAsync(ct);
 
-        public Task<Lease?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
-            _db.Leases.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+        public Task<Lease?> GetByIdAsync(LeaseId id, CancellationToken ct = default) =>
+            _db.Leases.FirstOrDefaultAsync(x => x.Id == id, ct);
 
         public Task AddAsync(Lease lease, CancellationToken ct = default) =>
             _db.Leases.AddAsync(lease, ct).AsTask();

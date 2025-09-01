@@ -4,6 +4,7 @@ using Leasing.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Leasing.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(LeasingDbContext))]
-    partial class LeasingDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250901054133_UpdateLeasingTable")]
+    partial class UpdateLeasingTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

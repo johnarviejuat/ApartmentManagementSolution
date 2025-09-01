@@ -35,8 +35,6 @@
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
 
-
-        public void MarkDepositPortion(decimal value)
-            => DepositPortion = decimal.Round(Math.Max(0, value), 2, MidpointRounding.AwayFromZero);
+        public void MarkDepositPortion(decimal value) => DepositPortion = decimal.Round(Math.Max(0, value), 2, MidpointRounding.AwayFromZero);
     }
 }

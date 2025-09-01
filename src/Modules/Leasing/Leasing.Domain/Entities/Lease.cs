@@ -1,10 +1,12 @@
 ﻿
 namespace Leasing.Domain.Entities;
 
+public sealed record LeaseId(Guid Value);
+
 public interface IAggregateRoot { }
 public sealed class Lease : IAggregateRoot
 {
-    public Guid Id { get; private set; } = Guid.NewGuid();
+    public LeaseId Id { get; private set; } = default!;
     public Guid TenantId { get; private set; }
     public Guid ApartmentId { get; private set; }
 
@@ -20,7 +22,7 @@ public sealed class Lease : IAggregateRoot
     public DateOnly StartDate { get; private set; }
     public DateOnly? EndDate { get; private set; }
     public bool IsActive { get; private set; } = true;
-    public Guid? PreviousLeaseId { get; private set; }
+    public LeaseId? PreviousLeaseId { get; private set; }
 
     private Lease() { }
 
@@ -32,6 +34,7 @@ public sealed class Lease : IAggregateRoot
         decimal depositRequired,
         DateOnly startDate)
     {
+        Id = new LeaseId(Guid.NewGuid());
         TenantId = tenantId;
         ApartmentId = apartmentId;
         MonthlyRent = monthlyRent;
@@ -45,14 +48,7 @@ public sealed class Lease : IAggregateRoot
         IsActive = true;
     }
 
-    public Lease Renew(
-        DateOnly newStartDate,
-        decimal newMonthlyRent,
-        DateOnly newFirstDueDate,
-        decimal? newDepositRequired = null,
-        bool carryOverCredit = true,
-        bool carryOverDeposit = true
-    )
+    public Lease Renew(DateOnly newStartDate, decimal newMonthlyRent, DateOnly newFirstDueDate, decimal? newDepositRequired = null, bool carryOverCredit = true, bool carryOverDeposit = true )
     {
         if (!IsActive) throw new InvalidOperationException("Cannot renew an inactive lease.");
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(newStartDate, StartDate);
@@ -77,14 +73,30 @@ public sealed class Lease : IAggregateRoot
 
     public void FundDeposit(decimal amount)
     {
+        if (amount <= 0) return;
         DepositHeld = decimal.Round(DepositHeld + amount, 2, MidpointRounding.AwayFromZero);
+    }
+    public (int monthsCovered, decimal remainder) ApplyRent(decimal amount, DateOnly today, bool applyEarly = true)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        if (applyEarly)
+            return ApplyPayment(amount);
+        if (today < NextDueDate)
+        {
+            Credit = decimal.Round(Credit + amount, 2, MidpointRounding.AwayFromZero);
+            return (0, Credit);
+        }
+        return ApplyPayment(amount);
     }
     public (int monthsCovered, decimal remainder) ApplyPayment(decimal amount)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        if (MonthlyRent <= 0) throw new InvalidOperationException("MonthlyRent must be > 0.");
+
         amount = decimal.Round(amount + Credit, 2, MidpointRounding.AwayFromZero);
 
         var months = 0;
-        while (amount + 0.0001m >= MonthlyRent)
+        while (amount >= MonthlyRent)
         {
             amount -= MonthlyRent;
             months++;
@@ -93,6 +105,11 @@ public sealed class Lease : IAggregateRoot
 
         Credit = decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
         return (months, Credit);
+    }
+    public void SettleIfDue(DateOnly today)
+    {
+        if (today < NextDueDate) return;
+        ApplyPayment(0m);
     }
     public void Terminate()
     {

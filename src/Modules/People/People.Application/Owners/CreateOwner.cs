@@ -18,20 +18,13 @@ public sealed class CreateOwnerHandler(IOwnerRepository repo, IValidator<CreateO
         var result = await _validator.ValidateAsync(c, ct);
         if (!result.IsValid) throw new ValidationException(result.Errors);
 
-        Address? mailing = c.MailingAddress is null
-            ? null
-            : new Address(
-                c.MailingAddress.Line1,
-                c.MailingAddress.City,
-                c.MailingAddress.State,
-                c.MailingAddress.PostalCode);
 
         var entity = new Owner(
             new OwnerId(Guid.NewGuid()),
             new PersonName(c.FirstName, c.LastName),
             new Email(c.Email),
             string.IsNullOrWhiteSpace(c.Phone) ? null : new Phone(c.Phone),
-            mailing,
+            new Address(c.MailingLine1, c.MailingCity, c.MailingState, c.MailingPostalCode),
             c.Notes);
 
         await _repo.AddAsync(entity, ct);

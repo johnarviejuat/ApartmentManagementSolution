@@ -8,13 +8,14 @@ namespace Leasing.Application.Leases.Mapping
         public LeaseMappingProfile() {
 
             CreateMap<Lease, LeaseDto>()
-               .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
-               .ForCtorParam("MonthlyRent", opt => opt.MapFrom(src => src.MonthlyRent))
-               .ForCtorParam("NextDueDate", opt => opt.MapFrom(src => src.NextDueDate))
-               .ForCtorParam("Credit", opt => opt.MapFrom(src => src.Credit))
-               .ForCtorParam("DepositRequired", opt => opt.MapFrom(src => src.DepositRequired))
-               .ForCtorParam("DepositHeld", opt => opt.MapFrom(src => src.DepositHeld))
-               .ForCtorParam("IsDepositFunded", opt => opt.MapFrom(src => src.IsDepositFunded));
+                .ForCtorParam(nameof(LeaseDto.Id), o => o.MapFrom(s => s.Id.Value))
+                .ForCtorParam(nameof(LeaseDto.MonthlyRent), o => o.MapFrom(s => s.MonthlyRent))
+                .ForCtorParam(nameof(LeaseDto.NextDueDate), o => o.MapFrom(s => s.NextDueDate))
+                .ForCtorParam(nameof(LeaseDto.Credit), o => o.MapFrom(s => s.Credit))
+                .ForCtorParam(nameof(LeaseDto.DepositRequired), o => o.MapFrom(s => s.DepositRequired))
+                .ForCtorParam(nameof(LeaseDto.DepositHeld), o => o.MapFrom(s => s.DepositHeld))
+                .ForCtorParam(nameof(LeaseDto.IsDepositFunded), o => o.MapFrom(s => s.IsDepositFunded))
+                .ForCtorParam(nameof(LeaseDto.IsActive), o => o.MapFrom(s => s.IsActive));        
         }
     }
 }

@@ -8,6 +8,6 @@
         decimal DepositRequired,
         decimal DepositHeld,
         bool IsDepositFunded,
-        ApartmentDto? Apartment = null
+        bool IsActive
     );
 }

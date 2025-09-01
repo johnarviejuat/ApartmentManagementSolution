@@ -12,15 +12,7 @@ namespace Leasing.Domain.Abstraction
         Task<bool> ExistsForTenantApartmentAsync(Guid tenantId, Guid apartmentId, CancellationToken ct = default);
         Task<int> HardDeleteByTenantApartmentAsync(Guid tenantId, Guid apartmentId, CancellationToken ct = default);
         Task<List<Lease>> GetAllAsync(CancellationToken ct = default);
-        Task<Lease?> GetByIdAsync(Guid id, CancellationToken ct = default);
-        Task<Lease> RenewAsync(
-            Guid tenantId,
-            Guid apartmentId,
-            DateOnly newStart,
-            decimal newRent,
-            DateOnly newFirstDue,
-            decimal? newDepositRequired,
-            CancellationToken ct = default
-        );
+        Task<Lease?> GetByIdAsync(LeaseId id, CancellationToken ct = default);
+        Task<Lease> RenewAsync(Guid tenantId,Guid apartmentId,DateOnly newStart,decimal newRent,DateOnly newFirstDue,decimal? newDepositRequired,CancellationToken ct = default);
     }
 }

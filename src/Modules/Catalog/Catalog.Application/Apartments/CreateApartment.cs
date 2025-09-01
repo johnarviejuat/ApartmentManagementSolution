@@ -19,7 +19,7 @@ public sealed class CreateApartmentHandler(IApartmentRepository repo, IValidator
             new ApartmentId(Guid.NewGuid()),
             c.Name,
             c.UnitNumber,
-            new Address(c.Address.Line1, c.Address.City, c.Address.State, c.Address.PostalCode),
+            new Address(c.Line1, c.City, c.State, c.PostalCode),
             c.Bedrooms,
             c.Bathrooms,
             c.Capacity,

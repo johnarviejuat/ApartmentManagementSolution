@@ -1,25 +1,29 @@
 ﻿using AutoMapper;
+using Catalog.Domain.Entities;
 using People.Application.Common;
 using People.Domain.Entities;
 
-namespace People.Application.Tenants.Mapping
+namespace People.Application.Tenants.Mapping;
+public class TenantMappingProfile : Profile
 {
-    public class TenantMappingProfile : Profile
+    public TenantMappingProfile()
     {
-        public TenantMappingProfile()
-        {
-            CreateMap<Tenant, TenantDto>()
-                .ForCtorParam("Id", o => o.MapFrom(s => s.Id.Value))
-                .ForCtorParam("FirstName", o => o.MapFrom(s => s.Name.First))
-                .ForCtorParam("LastName", o => o.MapFrom(s => s.Name.Last))
-                .ForCtorParam("Email", o => o.MapFrom(s => s.Email.Value))
-                .ForCtorParam("Phone", o => o.MapFrom(s => s.Phone == null ? null : s.Phone.Value))
-                .ForCtorParam("ApartmentId", o => o.MapFrom(s => s.ApartmentId == null ? (Guid?)null : s.ApartmentId.Value))
-                .ForCtorParam("MoveInDate", o => o.MapFrom(s => s.MoveInDate))
-                .ForCtorParam("MoveOutDate", o => o.MapFrom(s => s.MoveOutDate))
-                .ForCtorParam("IsActive", o => o.MapFrom(s => s.Status == TenantStatus.Active))
-                .ForCtorParam("CreatedAt", o => o.MapFrom(s => s.CreatedAt))
-                .ForCtorParam("UpdatedAt", o => o.MapFrom(s => s.UpdatedAt));
-        }
+        CreateMap<TenantId, Guid>().ConvertUsing(id => id.Value);
+
+        CreateMap<Tenant, TenantDto>()
+            .ForMember(d => d.Id, m => m.MapFrom(s => s.Id.Value))
+            .ForMember(d => d.FirstName, m => m.MapFrom(s => s.Name.First))
+            .ForMember(d => d.LastName, m => m.MapFrom(s => s.Name.Last))
+            .ForMember(d => d.Email, m => m.MapFrom(s => s.Email.Value))
+            .ForMember(d => d.Phone, m => m.MapFrom(s => s.Phone == null ? null : s.Phone.Value))
+            .ForMember(d => d.MoveInDate, m => m.MapFrom(s => s.MoveInDate))
+            .ForMember(d => d.MoveOutDate, m => m.MapFrom(s => s.MoveOutDate))
+            .ForMember(d => d.IsActive, m => m.MapFrom(s => s.Status == TenantStatus.Active))
+            .ForMember(d => d.Apartment, m => m.Ignore());
+
+        CreateMap<Apartment, TenantApartment>()
+            .ForMember(d => d.Id, m => m.MapFrom(s => s.Id.Value.ToString()))
+            .ForMember(d => d.Name, m => m.MapFrom(s => s.Name))
+            .ForMember(d => d.UnitNumber, m => m.MapFrom(s=> s.UnitNumber));
     }
 }

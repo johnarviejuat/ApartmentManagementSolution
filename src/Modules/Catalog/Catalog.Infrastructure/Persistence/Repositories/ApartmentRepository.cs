@@ -15,11 +15,12 @@ public sealed class ApartmentRepository(CatalogDbContext db) : IApartmentReposit
     }
 
     public Task<Apartment?> GetByIdAsync(ApartmentId id, CancellationToken ct = default) =>
-       _db.Apartments.FirstOrDefaultAsync(a => a.Id == id, ct);
+       _db.Apartments.FirstOrDefaultAsync(a => a.Id == id && a.IsDeleted == false, ct);
 
     public Task<List<Apartment>> GetAllAsync(CancellationToken ct = default) =>
         _db.Apartments
            .AsNoTracking()
+           .Where(a => !a.IsDeleted)
            .ToListAsync(ct);
 
     public Task UpdateAsync(Apartment apartment, CancellationToken ct = default)

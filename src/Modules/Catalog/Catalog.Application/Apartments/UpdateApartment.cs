@@ -22,11 +22,13 @@ public sealed class UpdateApartmentHandler(IApartmentRepository repo, IValidator
 
         existingApartment.Rename(c.Name);
         existingApartment.SetUnitNumber(c.UnitNumber);
-        existingApartment.ChangeAddress(new Address(c.Address.Line1, c.Address.City, c.Address.State, c.Address.PostalCode));
+        existingApartment.ChangeAddress(new Address(c.Line1, c.City, c.State, c.PostalCode));
         existingApartment.SetBedrooms(c.Bedrooms);
         existingApartment.SetBathrooms(c.Bathrooms);
         existingApartment.SetCapacity(c.Capacity);
         existingApartment.ChangeMonthlyRent(c.MonthlyRent);
+        existingApartment.ChangeAdvanceRent(c.AdvanceRent);
+        existingApartment.ChangeSecurityDeposit(c.SecurityDeposit);
         existingApartment.SetSquareFeet(c.SquareFeet);
         existingApartment.SetAvailableFrom(c.AvailableFrom);
         existingApartment.UpdateDescription(c.Description);

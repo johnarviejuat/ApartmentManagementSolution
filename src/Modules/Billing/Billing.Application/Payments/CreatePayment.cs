@@ -1,18 +1,16 @@
 ﻿using Billing.Application.Payments.Commands.Create;
-
 using Billing.Domain.Abstraction;
 using Billing.Domain.Entities;
-
 using Catalog.Domain.Abstractions;
 using Catalog.Domain.Entities;
-
 using Leasing.Domain.Abstraction;
 using Leasing.Domain.Entities;
-
 using FluentValidation;
 using MediatR;
+using People.Domain.Entities;
 
 namespace Billing.Application.Payments;
+
 public sealed class CreatePaymentHandler(
     IPaymentRepository paymentRepo,
     ILeaseRepository leaseRepo,
@@ -55,22 +53,24 @@ public sealed class CreatePaymentHandler(
         {
             try
             {
-                // 1) persist the payment
+                // 1) persist payment
                 await _paymentRepo.AddAsync(payment, ct);
                 await _paymentRepo.SaveChangesAsync(ct);
 
-                // 2) apply to lease and capture what happened
-                var apply = await UpsertLeaseAndApplyAsync(c.TenantId.Value, c.ApartmentId.Value, payment.Amount, ct, createIfMissing: true);
+                // 2) apply to lease
+                var apply = await UpsertLeaseAndApplyAsync(new TenantId(c.TenantId.Value), new ApartmentId(c.ApartmentId.Value), payment.Amount, ct, createIfMissing: true);
 
-                // 3) (optional) if you already store DepositPortion on Payment, tag it:
+                // 3) optionally tag deposit portion
                 if (apply.DepositPortion > 0m)
                 {
                     payment.MarkDepositPortion(apply.DepositPortion);
                     await _paymentRepo.SaveChangesAsync(ct);
                 }
 
-                // 4) you now know if the "next due" was paid:
+                // if needed:
                 var paidNextDue = apply.MonthsCovered >= 1;
+                _ = paidNextDue;
+
                 return payment.Id;
             }
             catch (Exception ex) when (IsUniqueRefViolation(ex) && attempt < maxAttempts)
@@ -91,27 +91,30 @@ public sealed class CreatePaymentHandler(
     }
 
     private async Task<LeaseApplyResult> UpsertLeaseAndApplyAsync(
-     Guid tenantId,
-     Guid apartmentId,
-     decimal amount,
-     CancellationToken ct,
-     bool createIfMissing = false)
+        TenantId tenantId,
+        ApartmentId apartmentId,
+        decimal amount,
+        CancellationToken ct,
+        bool createIfMissing = false)
     {
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(amount, 0m);
 
-        var lease = await _leaseRepo.GetActiveAsync(tenantId, apartmentId, ct);
+        // tracked entity
+        var lease = await _leaseRepo.GetActiveAsync(tenantId.Value, apartmentId.Value, ct);
+
         if (lease is null)
         {
             if (!createIfMissing)
                 throw new InvalidOperationException(
                     $"No active lease for Tenant '{tenantId}' and Apartment '{apartmentId}'.");
 
-            var hasHistory = await _leaseRepo.ExistsForTenantApartmentAsync(tenantId, apartmentId, ct);
+            // check any history (active or inactive)
+            var hasHistory = await _leaseRepo.ExistsForTenantApartmentAsync(tenantId.Value, apartmentId.Value, ct);
             if (hasHistory)
                 throw new InvalidOperationException(
                     "No active lease exists but history was found. Use the renew endpoint before taking payment.");
 
-            var apt = await _apartmentRepo.GetByIdAsync(new ApartmentId(apartmentId), ct)
+            var apt = await _apartmentRepo.GetByIdAsync(apartmentId, ct)
                       ?? throw new InvalidOperationException($"Apartment '{apartmentId}' not found.");
 
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -121,23 +124,27 @@ public sealed class CreatePaymentHandler(
             var firstDue = ComputeFirstDueDate(startDate);
             var depositRequired = apt.SecurityDeposit;
 
-            lease = new Lease(tenantId, apartmentId, apt.MonthlyRent, firstDue, depositRequired, startDate);
+            lease = new Lease(tenantId.Value, apartmentId.Value, apt.MonthlyRent, firstDue, depositRequired, startDate);
             await _leaseRepo.AddAsync(lease, ct);
         }
 
         var coverageStart = lease.NextDueDate;
 
-        // deposit first
+        // 1) deposit first
         var depositNeeded = Math.Max(0m, lease.DepositRequired - lease.DepositHeld);
         var depositPortion = Math.Min(depositNeeded, amount);
         if (depositPortion > 0m)
-            lease.DepositHeld = decimal.Round(lease.DepositHeld + depositPortion, 2, MidpointRounding.AwayFromZero);
+            lease.FundDeposit(depositPortion);
 
-        // then rent
+        // 2) then rent — APPLY IMMEDIATELY so due date advances on early pay
         var rentPortion = amount - depositPortion;
-        var (monthsCovered, remainder) = rentPortion > 0m
-            ? lease.ApplyPayment(rentPortion)
-            : (0, lease.Credit);
+
+        int monthsCovered;
+        decimal remainder;
+        if (rentPortion > 0m)
+            (monthsCovered, remainder) = lease.ApplyPayment(rentPortion);
+        else
+            (monthsCovered, remainder) = (0, lease.Credit);
 
         await _leaseRepo.SaveChangesAsync(ct);
 
@@ -151,10 +158,10 @@ public sealed class CreatePaymentHandler(
         );
     }
 
-    private static DateOnly ComputeFirstDueDate(DateOnly? availableFrom)
+    private static DateOnly ComputeFirstDueDate(DateOnly availableFrom)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var anchor = availableFrom ?? today;
+        var anchor = availableFrom;
 
         var sameMonthDay = Math.Min(anchor.Day, DateTime.DaysInMonth(today.Year, today.Month));
         var due = new DateOnly(today.Year, today.Month, sameMonthDay);
@@ -186,23 +193,16 @@ public sealed class CreatePaymentHandler(
         switch (e.GetType().Name)
         {
             case "SqlException":
-                {
-                    var number = (int?)e.GetType().GetProperty("Number")?.GetValue(e);
-                    return number is 2601 or 2627;
-                }
+                var number = (int?)e.GetType().GetProperty("Number")?.GetValue(e);
+                return number is 2601 or 2627;     // duplicate key
             case "PostgresException":
-                {
-                    var state = (string?)e.GetType().GetProperty("SqlState")?.GetValue(e);
-                    return state == "23505";
-                }
+                var state = (string?)e.GetType().GetProperty("SqlState")?.GetValue(e);
+                return state == "23505";
             case "SqliteException":
-                {
-                    var code = (int?)e.GetType().GetProperty("SqliteErrorCode")?.GetValue(e);
-                    return code == 19;
-                }
+                var code = (int?)e.GetType().GetProperty("SqliteErrorCode")?.GetValue(e);
+                return code == 19;
             default:
                 return false;
         }
     }
 }
- 

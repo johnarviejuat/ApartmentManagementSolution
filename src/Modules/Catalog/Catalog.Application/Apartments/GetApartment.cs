@@ -3,6 +3,7 @@ using Catalog.Application.Common;
 using Catalog.Domain.Abstractions;
 using Catalog.Domain.Entities;
 using MediatR;
+
 using People.Domain.Abstraction;
 using People.Domain.Entities;
 
@@ -23,11 +24,22 @@ public class GetApartmentHandler(IApartmentRepository repo, IOwnerRepository own
         var apartment = await _repo.GetByIdAsync(new ApartmentId(q.Id), ct);
         if (apartment is null) return null;
 
-        var tenants = await _tenantRepo.ListByApartmentIdAsync(apartment.Id.Value, ct);
-        var tenantDtos = _mapper.Map<IReadOnlyList<TenantDto>>(tenants);
+        PersonInformation? owner = null;
+        if (apartment.OwnerId is not null)
+        {
+            var ownerEntity = await _ownerRepo.GetByIdAsync(new OwnerId(apartment.OwnerId.Value), ct);
+            if (ownerEntity is not null)
+                owner = _mapper.Map<PersonInformation>(ownerEntity);
+        }
 
-        var apartmentDto = _mapper.Map<ApartmentDto>(apartment) with { Tenants = tenantDtos };
-           
+        PersonInformation[] tenants = [];
+        if (apartment.Id is not null) 
+        {
+            var tenantEntities = await _tenantRepo.ListByApartmentIdAsync(apartment.Id.Value, ct);
+            tenants = [.. tenantEntities.Select(t => _mapper.Map<PersonInformation>(t))];
+        }
+
+        var apartmentDto = _mapper.Map<ApartmentDto>(apartment) with { Owner = owner, Tenants = tenants};
         return apartmentDto;
     }
 }
@@ -44,25 +56,25 @@ public class GetAllApartmentsHandler(IApartmentRepository repo, IOwnerRepository
         var apartments = await _repo.GetAllAsync(ct);
         var list = new List<ApartmentDto>(apartments.Count);
 
-
         foreach (var apartment in apartments)
         {
+            PersonInformation? owner = null;
+            if (apartment.OwnerId is not null)
+            {
+                var ownerEntity = await _ownerRepo.GetByIdAsync(new OwnerId(apartment.OwnerId.Value), ct);
+                if (ownerEntity is not null)
+                    owner = _mapper.Map<PersonInformation>(ownerEntity);
+            }
 
-            //OwnerDto? ownerDto = null;
-            //if (apartment.OwnerId is not null)
-            //{
-            //    var owner = await _ownerRepo.GetByIdAsync(new OwnerId(apartment.OwnerId.Value), ct);
-            //    if (owner is not null)
-            //        ownerDto = _mapper.Map<OwnerDto>(owner);
-            //}
-
-            var tenants = await _tenantRepo.ListByApartmentIdAsync(apartment.Id.Value, ct);
-            var tenantDtos = _mapper.Map<IReadOnlyList<TenantDto>>(tenants);
-
-            var apartmentDto = _mapper.Map<ApartmentDto>(apartment) with { Tenants = tenantDtos };
+            PersonInformation[] tenants = [];
+            if (apartment.Id is not null)
+            {
+                var tenantEntities = await _tenantRepo.ListByApartmentIdAsync(apartment.Id.Value, ct);
+                tenants = [.. tenantEntities.Select(t => _mapper.Map<PersonInformation>(t))];
+            }
+            var apartmentDto = _mapper.Map<ApartmentDto>(apartment) with {Owner = owner, Tenants = tenants };
             list.Add(apartmentDto);
         }
-
         return list;
     }
 }

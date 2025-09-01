@@ -1,5 +1,4 @@
 ﻿using MediatR;
-using People.Application.Common;
 
 namespace People.Application.Owners.Commands.Create;
 
@@ -8,6 +7,9 @@ public sealed record CreateOwnerCommand(
     string LastName,
     string Email,
     string? Phone,
-    AddressDto? MailingAddress,
+    string? MailingLine1,
+    string? MailingCity,
+    string? MailingState,
+    string? MailingPostalCode,
     string? Notes
 ) : IRequest<Guid>;

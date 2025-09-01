@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using Billing.Application.Payments.Commands.Create;
 using BuildingBlocks;
+using Leasing.Application.Leases;
 using Leasing.Application.Leases.Mapping;
 using Leasing.Domain.Abstraction;
 using Leasing.Infrastructure.Persistence;
@@ -32,6 +34,7 @@ public sealed class LeasingModule : IModule
                     .MigrationsHistoryTable("__EFMigrationsHistory", "leasing")
                     .MigrationsAssembly(typeof(LeasingDbContext).Assembly.FullName)));
         services.AddScoped<ILeaseRepository, LeaseRepository>();
+        services.AddMediatR(m => m.RegisterServicesFromAssembly(typeof(GetLeaseAgreementHandler).Assembly));
         services.AddAutoMapper(typeof(LeaseMappingProfile).Assembly);
     }
 
