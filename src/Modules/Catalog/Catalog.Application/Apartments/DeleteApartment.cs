@@ -5,8 +5,7 @@ using MediatR;
 
 namespace Catalog.Application.Apartments;
 
-public sealed class DeleteApartmentHandler(IApartmentRepository repo)
-    : IRequestHandler<DeleteApartmentCommand, bool>
+public sealed class DeleteApartmentHandler(IApartmentRepository repo) : IRequestHandler<DeleteApartmentCommand, bool>
 {
     private readonly IApartmentRepository _repo = repo;
 

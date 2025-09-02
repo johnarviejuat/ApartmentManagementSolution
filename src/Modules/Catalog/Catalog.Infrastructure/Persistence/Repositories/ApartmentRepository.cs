@@ -1,6 +1,7 @@
 ﻿using Catalog.Domain.Abstractions;
 using Catalog.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using People.Domain.Entities;
 
 namespace Catalog.Infrastructure.Persistence.Repositories;
 
@@ -22,6 +23,11 @@ public sealed class ApartmentRepository(CatalogDbContext db) : IApartmentReposit
            .AsNoTracking()
            .Where(a => !a.IsDeleted)
            .ToListAsync(ct);
+
+    public Task<bool> AnyActiveByOwnerId(OwnerId id, CancellationToken ct = default) =>
+        _db.Apartments
+           .AsNoTracking()
+           .AnyAsync(a => !a.IsDeleted && a.OwnerId == id.Value, ct);
 
     public Task UpdateAsync(Apartment apartment, CancellationToken ct = default)
     {

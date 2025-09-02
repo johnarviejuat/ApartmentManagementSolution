@@ -6,8 +6,10 @@ using People.Application.Common.Request;
 using People.Application.Tenants;
 using People.Application.Tenants.Commands.AssignToApartment;
 using People.Application.Tenants.Commands.Create;
+using People.Application.Tenants.Commands.Delete;
 using People.Application.Tenants.Commands.RemoveToApartment;
 using People.Application.Tenants.Commands.RenewToApartment;
+using People.Application.Tenants.Commands.Update;
 using People.Domain.Entities;
 
 namespace People.Api.Controllers
@@ -40,11 +42,70 @@ namespace People.Api.Controllers
             }
         }
 
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> Update(Guid id, [FromBody] TenantRequest dto, CancellationToken ct)
+        {
+            try
+            {
+                var cmd = new UpdateTenantCommand(
+                    id,
+                    dto.FirstName,
+                    dto.LastName,
+                    dto.Email,
+                    dto.Phone,
+                    dto.Notes
+                );
+                var ok = await _sender.Send(cmd, ct);
+                return ok ? NoContent() : NotFound();
+            }
+            catch (FluentValidation.ValidationException ex)
+            {
+                var errors = ex.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+                return ValidationProblem(new ValidationProblemDetails(errors)
+                {
+                    Title = "Validation failed",
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+        }
+
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+        {
+            try 
+            {
+                var ok = await _sender.Send(new DeleteTenantCommand(id), ct);
+                return ok ? NoContent() : NotFound();
+            }
+            catch (FluentValidation.ValidationException ex)
+            {
+                var errors = ex.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+
+                var pd = new ValidationProblemDetails(errors)
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "One or more validation errors occurred."
+                };
+                return BadRequest(pd);
+            }
+        }
+
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<TenantDto>> GetById(Guid id, CancellationToken ct)
         {
             var dto = await _sender.Send(new GetTenantQuery(id), ct);
             return dto is null ? NotFound() : Ok(dto);
+        }
+
+        [HttpGet("all")]
+        public async Task<ActionResult<IEnumerable<TenantDto>>> GetAll(CancellationToken ct)
+        {
+            var dtos = await _sender.Send(new GetAllTenantQuery(), ct);
+            return Ok(dtos);
         }
 
         [HttpPost("create")]

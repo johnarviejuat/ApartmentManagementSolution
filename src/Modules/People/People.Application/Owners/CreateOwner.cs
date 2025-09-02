@@ -7,8 +7,7 @@ using People.Domain.ValueObjects;
 
 namespace People.Application.Owners;
 
-public sealed class CreateOwnerHandler(IOwnerRepository repo, IValidator<CreateOwnerCommand> validator)
-        : IRequestHandler<CreateOwnerCommand, Guid>
+public sealed class CreateOwnerHandler(IOwnerRepository repo, IValidator<CreateOwnerCommand> validator) : IRequestHandler<CreateOwnerCommand, Guid>
 {
     private readonly IOwnerRepository _repo = repo;
     private readonly IValidator<CreateOwnerCommand> _validator = validator;

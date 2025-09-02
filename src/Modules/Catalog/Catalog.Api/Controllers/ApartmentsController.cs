@@ -31,20 +31,6 @@ public sealed class ApartmentsController(ISender sender) : ControllerBase
         }
     }
 
-    [HttpGet("{id:guid}")]
-    public async Task<ActionResult<ApartmentDto>> GetById(Guid id, CancellationToken ct)
-    {
-        var dto = await _sender.Send(new GetApartmentQuery(id), ct);
-        return dto is null ? NotFound() : Ok(dto);
-    }
-
-    [HttpGet("all")]
-    public async Task<ActionResult<IEnumerable<ApartmentDto>>> GetAll(CancellationToken ct)
-    {
-        var dtos = await _sender.Send(new GetAllApartmentsQuery(), ct);
-        return Ok(dtos);
-    }
-
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] ApartmentRequest dto, CancellationToken ct)
     {
@@ -83,6 +69,20 @@ public sealed class ApartmentsController(ISender sender) : ControllerBase
     {
         var ok = await _sender.Send(new DeleteApartmentCommand(id), ct);
         return ok ? NoContent() : NotFound();
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ApartmentDto>> GetById(Guid id, CancellationToken ct)
+    {
+        var dto = await _sender.Send(new GetApartmentQuery(id), ct);
+        return dto is null ? NotFound() : Ok(dto);
+    }
+
+    [HttpGet("all")]
+    public async Task<ActionResult<IEnumerable<ApartmentDto>>> GetAll(CancellationToken ct)
+    {
+        var dtos = await _sender.Send(new GetAllApartmentsQuery(), ct);
+        return Ok(dtos);
     }
 
     [HttpPut("assign")]

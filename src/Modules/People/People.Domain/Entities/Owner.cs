@@ -63,7 +63,6 @@ public sealed class Owner : IAggregateRoot
     public void Deactivate() { IsActive = false; Touch(); }
     public void Activate() { IsActive = true; Touch(); }
     public void SoftDelete() { IsDeleted = true; Touch(); }
-
     private void Touch() => UpdatedAt = DateTime.UtcNow;
 
 }

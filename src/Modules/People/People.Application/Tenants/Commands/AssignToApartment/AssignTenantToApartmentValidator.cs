@@ -2,7 +2,6 @@
 using Catalog.Domain.Entities;
 using FluentValidation;
 using Leasing.Domain.Abstraction;
-using People.Domain.Entities;
 
 namespace People.Application.Tenants.Commands.AssignToApartment
 {
@@ -24,10 +23,7 @@ namespace People.Application.Tenants.Commands.AssignToApartment
             RuleFor(c => c)
                .MustAsync(async (cmd, ct) =>
                {
-                   var ok = await leaseRepo.ExistsForTenantApartmentAsync(
-                       cmd.TenantId,
-                       cmd.ApartmentId,
-                       ct);
+                   var ok = await leaseRepo.ExistsForTenantApartmentAsync(cmd.TenantId,cmd.ApartmentId,ct);
                    return ok;
                })
                .WithMessage(c => $"No verified payment found for Tenant '{c.TenantId}' and Apartment '{c.ApartmentId}'.");

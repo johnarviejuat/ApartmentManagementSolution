@@ -1,7 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Catalog.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using People.Domain.Abstraction;
 using People.Domain.Entities;
-using People.Infrastructure.Persistence;
 
 namespace People.Infrastructure.Persistence.Repositories;
 public sealed class OwnerRepository(PeopleDbContext db) : IOwnerRepository
@@ -17,5 +17,18 @@ public sealed class OwnerRepository(PeopleDbContext db) : IOwnerRepository
     public Task<Owner?> GetByIdAsync(OwnerId id, CancellationToken ct = default) =>
            _db.Owners
               .AsNoTracking()
-              .FirstOrDefaultAsync(o => o.Id == id, ct);
+              .FirstOrDefaultAsync(o => o.Id == id && o.IsDeleted == false, ct);
+
+    public Task<List<Owner>> GetAllAsync(CancellationToken ct = default) =>
+        _db.Owners
+           .AsNoTracking()
+           .Where(a => !a.IsDeleted)
+           .ToListAsync(ct);
+
+    public Task UpdateAsync(Owner owner, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+        _db.Owners.Update(owner);
+        return Task.CompletedTask;
+    }
 }

@@ -1,12 +1,11 @@
-﻿
-namespace Leasing.Domain.Entities;
+﻿namespace Leasing.Domain.Entities;
 
 public sealed record LeaseId(Guid Value);
-
 public interface IAggregateRoot { }
+
 public sealed class Lease : IAggregateRoot
 {
-    public LeaseId Id { get; private set; } = default!;
+    public LeaseId Id { get; private set; }
     public Guid TenantId { get; private set; }
     public Guid ApartmentId { get; private set; }
 
@@ -15,22 +14,24 @@ public sealed class Lease : IAggregateRoot
     public DateOnly NextDueDate { get; private set; }
     public decimal Credit { get; private set; }
     public decimal DepositRequired { get; private set; }
-    public decimal DepositHeld { get; set; }
+    public decimal DepositHeld { get; private set; }
     public bool IsDepositFunded => DepositHeld >= DepositRequired;
 
     // Term boundaries + lifecycle
     public DateOnly StartDate { get; private set; }
     public DateOnly? EndDate { get; private set; }
-    public bool IsActive { get; private set; } = true;
+    public bool IsActive { get; private set; }
     public LeaseId? PreviousLeaseId { get; private set; }
 
+    // EF needs this
     private Lease() { }
 
+    // IMPORTANT: parameter names match property names exactly
     public Lease(
         Guid tenantId,
         Guid apartmentId,
         decimal monthlyRent,
-        DateOnly firstDueDate,
+        DateOnly nextDueDate,
         decimal depositRequired,
         DateOnly startDate)
     {
@@ -38,20 +39,26 @@ public sealed class Lease : IAggregateRoot
         TenantId = tenantId;
         ApartmentId = apartmentId;
         MonthlyRent = monthlyRent;
-        NextDueDate = firstDueDate;
+        NextDueDate = nextDueDate;
         DepositRequired = depositRequired;
         DepositHeld = 0m;
         Credit = 0m;
-
         StartDate = startDate;
         EndDate = null;
         IsActive = true;
     }
 
-    public Lease Renew(DateOnly newStartDate, decimal newMonthlyRent, DateOnly newFirstDueDate, decimal? newDepositRequired = null, bool carryOverCredit = true, bool carryOverDeposit = true )
+    public Lease Renew(
+        DateOnly newStartDate,
+        decimal newMonthlyRent,
+        DateOnly newFirstDueDate,
+        decimal? newDepositRequired = null,
+        bool carryOverCredit = true,
+        bool carryOverDeposit = true)
     {
         if (!IsActive) throw new InvalidOperationException("Cannot renew an inactive lease.");
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(newStartDate, StartDate);
+
         IsActive = false;
         EndDate = newStartDate.AddDays(-1);
 
@@ -76,18 +83,22 @@ public sealed class Lease : IAggregateRoot
         if (amount <= 0) return;
         DepositHeld = decimal.Round(DepositHeld + amount, 2, MidpointRounding.AwayFromZero);
     }
+
     public (int monthsCovered, decimal remainder) ApplyRent(decimal amount, DateOnly today, bool applyEarly = true)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
         if (applyEarly)
             return ApplyPayment(amount);
+
         if (today < NextDueDate)
         {
             Credit = decimal.Round(Credit + amount, 2, MidpointRounding.AwayFromZero);
             return (0, Credit);
         }
+
         return ApplyPayment(amount);
     }
+
     public (int monthsCovered, decimal remainder) ApplyPayment(decimal amount)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
@@ -106,11 +117,13 @@ public sealed class Lease : IAggregateRoot
         Credit = decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
         return (months, Credit);
     }
+
     public void SettleIfDue(DateOnly today)
     {
         if (today < NextDueDate) return;
         ApplyPayment(0m);
     }
+
     public void Terminate()
     {
         if (!IsActive) return;

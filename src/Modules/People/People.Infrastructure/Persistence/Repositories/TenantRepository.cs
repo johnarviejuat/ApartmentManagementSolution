@@ -15,6 +15,17 @@ public sealed class TenantRepository(PeopleDbContext db) : ITenantRepository
     public Task<Tenant?> GetByIdAsync(TenantId id, CancellationToken ct = default)
         => _db.Tenants.FirstOrDefaultAsync(t => t.Id == id, ct)!;
 
+    public Task<List<Tenant>> GetAllAsync(CancellationToken ct = default) =>
+    _db.Tenants
+       .AsNoTracking()
+       .Where(a => !a.IsDeleted)
+       .ToListAsync(ct);
+
+    public Task<bool> AnyActiveByTenantId(TenantId id, CancellationToken ct = default) =>
+        _db.Tenants
+        .AsNoTracking()
+        .AnyAsync(a => a.Id == id && !a.IsDeleted && a.ApartmentId != null, ct);
+
     public Task<List<Tenant>> ListByApartmentIdAsync(Guid apartmentId, CancellationToken ct = default)
         => _db.Tenants
               .Where(t => t.ApartmentId == apartmentId)

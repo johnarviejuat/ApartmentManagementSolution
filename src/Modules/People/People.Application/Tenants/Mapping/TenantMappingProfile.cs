@@ -19,6 +19,7 @@ public class TenantMappingProfile : Profile
             .ForMember(d => d.MoveInDate, m => m.MapFrom(s => s.MoveInDate))
             .ForMember(d => d.MoveOutDate, m => m.MapFrom(s => s.MoveOutDate))
             .ForMember(d => d.IsActive, m => m.MapFrom(s => s.Status == TenantStatus.Active))
+            .ForMember(d => d.Notes, m => m.MapFrom(s => s.Notes))
             .ForMember(d => d.Apartment, m => m.Ignore());
 
         CreateMap<Apartment, TenantApartment>()

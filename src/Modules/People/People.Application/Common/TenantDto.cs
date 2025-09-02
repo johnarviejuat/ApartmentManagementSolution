@@ -10,6 +10,7 @@
         public DateOnly? MoveInDate { get; init; }
         public DateOnly? MoveOutDate { get; init; }
         public bool IsActive { get; init; }
+        public string? Notes { get; init; }
         public TenantApartment? Apartment { get; init; }
     }
 
