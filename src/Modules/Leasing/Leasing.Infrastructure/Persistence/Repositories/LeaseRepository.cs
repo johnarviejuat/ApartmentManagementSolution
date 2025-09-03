@@ -23,7 +23,10 @@ namespace Leasing.Infrastructure.Persistence.Repositories
                     l.IsActive, ct);
 
         public Task<List<Lease>> GetAllAsync(CancellationToken ct = default) =>
-            _db.Leases.AsNoTracking().ToListAsync(ct);
+            _db.Leases
+            .AsNoTracking()
+            .Where(a => a.IsActive)
+            .ToListAsync(ct);
 
         public Task<Lease?> GetByIdAsync(LeaseId id, CancellationToken ct = default) =>
             _db.Leases.FirstOrDefaultAsync(x => x.Id == id, ct);

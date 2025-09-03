@@ -53,21 +53,17 @@ public sealed class CreatePaymentHandler(
         {
             try
             {
-                // 1) persist payment
                 await _paymentRepo.AddAsync(payment, ct);
                 await _paymentRepo.SaveChangesAsync(ct);
 
-                // 2) apply to lease
                 var apply = await UpsertLeaseAndApplyAsync(new TenantId(c.TenantId.Value), new ApartmentId(c.ApartmentId.Value), payment.Amount, ct, createIfMissing: true);
 
-                // 3) optionally tag deposit portion
                 if (apply.DepositPortion > 0m)
                 {
                     payment.MarkDepositPortion(apply.DepositPortion);
                     await _paymentRepo.SaveChangesAsync(ct);
                 }
 
-                // if needed:
                 var paidNextDue = apply.MonthsCovered >= 1;
                 _ = paidNextDue;
 
@@ -86,20 +82,12 @@ public sealed class CreatePaymentHandler(
                 );
             }
         }
-
         throw new InvalidOperationException("Failed to persist payment after retries.");
     }
 
-    private async Task<LeaseApplyResult> UpsertLeaseAndApplyAsync(
-        TenantId tenantId,
-        ApartmentId apartmentId,
-        decimal amount,
-        CancellationToken ct,
-        bool createIfMissing = false)
+    private async Task<LeaseApplyResult> UpsertLeaseAndApplyAsync(TenantId tenantId,ApartmentId apartmentId,decimal amount,CancellationToken ct,bool createIfMissing = false)
     {
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(amount, 0m);
-
-        // tracked entity
         var lease = await _leaseRepo.GetActiveAsync(tenantId.Value, apartmentId.Value, ct);
 
         if (lease is null)
@@ -108,7 +96,6 @@ public sealed class CreatePaymentHandler(
                 throw new InvalidOperationException(
                     $"No active lease for Tenant '{tenantId}' and Apartment '{apartmentId}'.");
 
-            // check any history (active or inactive)
             var hasHistory = await _leaseRepo.ExistsForTenantApartmentAsync(tenantId.Value, apartmentId.Value, ct);
             if (hasHistory)
                 throw new InvalidOperationException(
@@ -130,13 +117,11 @@ public sealed class CreatePaymentHandler(
 
         var coverageStart = lease.NextDueDate;
 
-        // 1) deposit first
         var depositNeeded = Math.Max(0m, lease.DepositRequired - lease.DepositHeld);
         var depositPortion = Math.Min(depositNeeded, amount);
         if (depositPortion > 0m)
             lease.FundDeposit(depositPortion);
 
-        // 2) then rent — APPLY IMMEDIATELY so due date advances on early pay
         var rentPortion = amount - depositPortion;
 
         int monthsCovered;
@@ -157,7 +142,6 @@ public sealed class CreatePaymentHandler(
             NewCredit: remainder
         );
     }
-
     private static DateOnly ComputeFirstDueDate(DateOnly availableFrom)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);

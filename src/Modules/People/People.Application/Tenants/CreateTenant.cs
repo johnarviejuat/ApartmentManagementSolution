@@ -7,25 +7,17 @@ using People.Domain.ValueObjects;
 
 namespace People.Application.Tenants;
 
-public sealed class CreateTenantHandler : IRequestHandler<CreateTenantCommand, Guid>
+public sealed class CreateTenantHandler(
+    ITenantRepository tenantRepo,
+    IValidator<CreateTenantCommand> validator) : IRequestHandler<CreateTenantCommand, Guid>
 {
-    private readonly ITenantRepository _tenantRepo;
-    private readonly IValidator<CreateTenantCommand> _validator;
-
-    public CreateTenantHandler(
-        ITenantRepository tenantRepo,
-        IValidator<CreateTenantCommand> validator)
-    {
-        _tenantRepo = tenantRepo;
-        _validator = validator;
-    }
+    private readonly ITenantRepository _tenantRepo = tenantRepo;
+    private readonly IValidator<CreateTenantCommand> _validator = validator;
 
     public async Task<Guid> Handle(CreateTenantCommand c, CancellationToken ct)
     {
         var result = await _validator.ValidateAsync(c, ct);
         if (!result.IsValid) throw new ValidationException(result.Errors);
-
-        // Just carry the ID (no dependency on Catalog)
         Guid? apartmentId = c.ApartmentId;
 
         var tenant = new Tenant(

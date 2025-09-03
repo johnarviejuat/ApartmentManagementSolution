@@ -29,7 +29,7 @@ public sealed class TenantRefIdJsonConverter : JsonConverter<TenantRefId>
         {
             var s = reader.GetString();
             if (Guid.TryParse(s, out g)) return new TenantRefId(g);
-            return new TenantRefId(Guid.Empty); // let validators catch empty/invalid
+            return new TenantRefId(Guid.Empty);
         }
 
         if (reader.TokenType == JsonTokenType.Null)
@@ -53,7 +53,7 @@ public sealed class ApartmentRefIdJsonConverter : JsonConverter<ApartmentRefId>
         {
             var s = reader.GetString();
             if (Guid.TryParse(s, out g)) return new ApartmentRefId(g);
-            return new ApartmentRefId(Guid.Empty); // let validators catch empty/invalid
+            return new ApartmentRefId(Guid.Empty);
         }
 
         if (reader.TokenType == JsonTokenType.Null)

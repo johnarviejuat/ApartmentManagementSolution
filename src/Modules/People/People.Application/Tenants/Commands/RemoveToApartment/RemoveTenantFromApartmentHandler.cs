@@ -7,7 +7,11 @@ using People.Domain.Entities;
 
 namespace People.Application.Tenants.Commands.RemoveToApartment
 {
-    internal class RemoveTenantFromApartmentHandler(ITenantRepository tenantRepo, IApartmentRepository apartmentRepo, ILeaseRepository leaseRepo) : IRequestHandler<RemoveTenantFromApartmentCommand, bool>
+    internal class RemoveTenantFromApartmentHandler(
+        ITenantRepository tenantRepo,
+        IApartmentRepository apartmentRepo,
+        ILeaseRepository leaseRepo
+    ) : IRequestHandler<RemoveTenantFromApartmentCommand, bool>
     {
         private readonly ITenantRepository _tenantRepo = tenantRepo;
         private readonly IApartmentRepository _apartmentRepo = apartmentRepo;
@@ -15,38 +19,36 @@ namespace People.Application.Tenants.Commands.RemoveToApartment
 
         public async Task<bool> Handle(RemoveTenantFromApartmentCommand c, CancellationToken ct)
         {
-            // 1) Load the apartment and tenant
-            var apartment = await _apartmentRepo.GetByIdAsync(new ApartmentId(c.ApartmentId), ct);
-            var tenant = await _tenantRepo.GetByIdAsync(new TenantId(c.TenantId), ct);
+            var apartment = await _apartmentRepo.GetByIdAsync(new ApartmentId(c.ApartmentId), ct)
+                ?? throw new KeyNotFoundException($"Apartment '{c.ApartmentId}' not found.");
+
+            var tenant = await _tenantRepo.GetByIdAsync(new TenantId(c.TenantId), ct)
+                ?? throw new KeyNotFoundException($"Tenant '{c.TenantId}' not found.");
+
             var lease = await _leaseRepo.GetActiveAsync(c.TenantId, c.ApartmentId, ct);
 
+            tenant.ChangeTenantStatus(c.TenantStatus);
+            await _tenantRepo.UpdateAsync(tenant, ct);
 
-            // 2) Evict the tenant (mark them as vacated)
-            tenant?.ChangeTenantStatus(c.TenantStatus);
-            await _tenantRepo.UpdateAsync(tenant!, ct);
-            await _tenantRepo.SaveChangesAsync(ct);
+            if (apartment.CurrentCapacity > 0)
+                apartment.DecrementCurrentCapacity();
 
-            // 3) Decrement the current capacity of the apartment
-            apartment?.DecrementCurrentCapacity();
-
-            // 4) If the apartment is no longer full, change its status to Vacant and set availability
-            if (apartment?.Capacity > apartment?.CurrentCapacity)
+            if (apartment.Capacity > apartment.CurrentCapacity)
             {
                 apartment.ChangeStatus(ApartmentStatus.Vacant);
                 apartment.SetIsAvailable(true);
             }
+            await _apartmentRepo.UpdateAsync(apartment, ct);
 
-            // 5) Remove Lease associated with the tenant and apartment
             if (lease is not null)
             {
-                lease.Terminate();
+                lease.Terminate(DateOnly.FromDateTime(DateTime.UtcNow));
                 await _leaseRepo.SaveChangesAsync(ct);
             }
 
-            // 6) Save changes to the apartment
-            await _apartmentRepo.UpdateAsync(apartment!, ct);
+            await _tenantRepo.SaveChangesAsync(ct);
             await _apartmentRepo.SaveChangesAsync(ct);
-
+            
             return true;
         }
     }

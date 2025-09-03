@@ -93,6 +93,13 @@ public sealed class Tenant : IAggregateRoot
         MoveOutDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(6));
         Touch();
     }
+    public void RenewAssignToApartment(DateOnly newStartDate)
+    {
+        Status = TenantStatus.Active;
+        MoveInDate = newStartDate;
+        MoveOutDate = newStartDate.AddMonths(6);
+        Touch();
+    }
     public void ChangeTenantStatus(TenantStatus TenantStatus) {
         Status = TenantStatus;
         ApartmentId = null;

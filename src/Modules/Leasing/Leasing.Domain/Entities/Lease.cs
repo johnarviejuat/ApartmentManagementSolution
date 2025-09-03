@@ -74,7 +74,6 @@ public sealed class Lease : IAggregateRoot
             Credit = carryOverCredit ? Credit : 0m,
             DepositHeld = carryOverDeposit ? DepositHeld : 0m
         };
-
         return next;
     }
 
@@ -124,10 +123,10 @@ public sealed class Lease : IAggregateRoot
         ApplyPayment(0m);
     }
 
-    public void Terminate()
+    public void Terminate(DateOnly today)
     {
         if (!IsActive) return;
         IsActive = false;
-        EndDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        EndDate = today < StartDate ? StartDate : today;
     }
 }
