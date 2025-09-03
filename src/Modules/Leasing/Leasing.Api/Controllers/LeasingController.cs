@@ -26,5 +26,12 @@ namespace Leasing.Api.Controllers
             return Ok(dtos);
         }
 
+        [HttpGet("due-status")]
+        public async Task<ActionResult<LeaseDueStatusDto>> GetDueStatus([FromQuery] Guid tenantId,[FromQuery] Guid apartmentId,CancellationToken ct)
+        {
+            var dto = await _sender.Send(new CheckLeaseDueStatusQuery(tenantId, apartmentId), ct);
+            return dto is null ? NotFound() : Ok(dto);
+        }
+
     }
 }
